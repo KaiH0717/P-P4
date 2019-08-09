@@ -19,7 +19,8 @@ struct Vertex
 {
 	XMFLOAT4 position;
 	XMFLOAT2 texture;
-	XMFLOAT4 normal;
+	XMFLOAT3 normal;
+	XMFLOAT4 color;
 };
 
 struct ConstantBuffer
@@ -28,6 +29,11 @@ struct ConstantBuffer
 	XMFLOAT4X4 world;
 	XMFLOAT4X4 view;
 	XMFLOAT4X4 projection;
+	// [0] = directional lighting, [1] = point lighting
+	XMFLOAT4 lightPos[2];
+	XMFLOAT4 lightNormal[2];
+	XMFLOAT4 lightColor[2];
+	XMFLOAT4 lightRadius;
 };
 
 class Graphics
@@ -54,6 +60,9 @@ class Graphics
 	int numVertices = 0;
 	void* indicies = nullptr;
 	int numIndicies = 0;
+	ConstantBuffer cb;
+	bool shrink = false;
+	XMVECTOR lightRad = { 1.0f, 0.0f, 0.0f, 0.0f };
 public:
 	// Init constructor
 	Graphics(GW::SYSTEM::GWindow* attatchPoint);

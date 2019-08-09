@@ -6,6 +6,7 @@
 #include "../../My assets/test pyramid.h"
 #include "../../My assets/StoneHenge.h"
 #include "DDSTextureLoader.h"
+#include <iostream>
 
 Graphics::Graphics(GW::SYSTEM::GWindow* attatchPoint)
 {
@@ -63,7 +64,7 @@ void Graphics::Render()
 			myContext->OMSetRenderTargets(1, targets, myDepthStencilView);
 
 			// Clear the screen to green
-			const float d_green[] = { 0.498f, 0.729f, 0, 1 }; // "DirectX Green"
+			const float d_green[] = { 0, 0, 0, 1 }; // "DirectX Green"
 			myContext->ClearRenderTargetView(myRenderTargetView, d_green);
 
 			// TODO: Set your shaders, Update & Set your constant buffers, Attatch your vertex & index buffers, Set your InputLayout & Topology & Draw!
@@ -78,31 +79,61 @@ void Graphics::Render()
 			myContext->PSSetShader(pixelShader, nullptr, 0);
 			myContext->OMSetRenderTargets(1, &myRenderTargetView, nullptr);
 
+			// lighting
+			XMVECTOR pos = { 0.0f, 0.0f, 0.0f, 1.0f };
+			XMVECTOR nor = { 0.577f, 0.577f, -0.577f, 0.0f };
+			XMVECTOR col = { 0.75f, 0.75f, 0.94f, 1.0f };
+			XMStoreFloat4(&cb.lightPos[0], pos);
+			XMStoreFloat4(&cb.lightNormal[0], XMVector4Normalize(nor));
+			XMStoreFloat4(&cb.lightColor[0], col);
+			pos = { -1.0f, 0.5f, 1.0f, 1.0f };
+			nor = { 0.0f, 0.0f, 0.0f, 0.0f };
+			col = { 1.0f, 0.0f, 0.0f, 1.0f };
+			XMStoreFloat4(&cb.lightPos[1], pos);
+			XMStoreFloat4(&cb.lightNormal[1], XMVector4Normalize(nor));
+			XMStoreFloat4(&cb.lightColor[1], col);
+			// point light radius
+			XMStoreFloat4(&cb.lightRadius, lightRad);
+			if (cb.lightRadius.x > 10.0f)
+			{
+				shrink = true;
+			}
+			else if (cb.lightRadius.x < 1.0f)
+			{
+				shrink = false;
+			}
+			if (shrink)
+			{
+				cb.lightRadius.x -= 0.3f;
+			}
+			else
+			{
+				cb.lightRadius.x += 0.3f;
+			}
+			XMStoreFloat4(&cb.lightRadius, lightRad);
 			// world
-			ConstantBuffer cb;
 			XMMATRIX temp = XMMatrixIdentity();
 			temp = XMMatrixTranslation(0.0f, 0.0f, 0.5f);
-			//temp = XMMatrixTranspose(temp);
 			XMStoreFloat4x4(&cb.world, temp);
 			// view
-			temp = XMMatrixLookAtLH({ 2.0f, 1.0f, -3.0f }, { 0, 0, 0 }, { 0, 1, 0 });
-			//temp = XMMatrixTranspose(temp);
+			XMVECTOR eye = { 0.0f, 2.0f, -3.0f };
+			XMVECTOR focus = { 0.0f, 0.0f, 0.0f };
+			XMVECTOR up = { 0.0f, 1.0f, 0.0f };
+			temp = XMMatrixLookAtLH(eye, focus, up);
 			XMStoreFloat4x4(&cb.view, temp);
 			// projection
 			float ar = 0.0f;
 			mySurface->GetAspectRatio(ar);
 			temp = XMMatrixPerspectiveFovLH(XM_PIDIV2, ar, 0.1f, 10.0f);
-			//temp = XMMatrixTranspose(temp);
 			XMStoreFloat4x4(&cb.projection, temp);
-
 			D3D11_MAPPED_SUBRESOURCE gpuBuffer;
 			myContext->Map(constantBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &gpuBuffer);
-			//*((ConstantBuffer*)(gpuBuffer.pData)) = GCB;
-			// another way
 			memcpy(gpuBuffer.pData, &cb, sizeof(ConstantBuffer));
 			myContext->Unmap(constantBuffer, 0);
 			ID3D11Buffer* constants[] = { constantBuffer };
+
 			myContext->VSSetConstantBuffers(0, 1, constants);
+			myContext->PSSetConstantBuffers(0, 1, constants);
 
 			myContext->PSSetShaderResources(0, 1, &shaderRV);
 			myContext->PSSetSamplers(0, 1, &sampler);
@@ -132,10 +163,10 @@ HRESULT Graphics::InitializeDevice()
 	D3D11_INPUT_ELEMENT_DESC layout[] =
 	{
 		{"POSITION", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0},
-		{"TEXCOORD", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0},
-		{"NORMAL"  , 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0}
+		{"TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT	  , 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0},
+		{"NORMAL"  , 0, DXGI_FORMAT_R32G32B32_FLOAT	  , 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0},
+		{"COLOR", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0}
 	};
-
 	hr = myDevice->CreateInputLayout(layout, ARRAYSIZE(layout), VertexShader, sizeof(VertexShader), &vertexLayout);
 
 	// fill vertices
@@ -172,7 +203,8 @@ HRESULT Graphics::InitializeDevice()
 		vertices[i].normal.x = StoneHenge_data[i].nrm[0];
 		vertices[i].normal.y = StoneHenge_data[i].nrm[1];
 		vertices[i].normal.z = StoneHenge_data[i].nrm[2];
-		vertices[i].normal.w = 0.0f;
+
+		vertices[i].color = { 1.0f, 1.0f, 1.0f, 1.0f };
 	}
 	indicies = (void*)StoneHenge_indicies;
 	// describe vertex data and create vertex buffer
@@ -198,11 +230,17 @@ HRESULT Graphics::InitializeDevice()
 
 void Graphics::CleanDevice()
 {
+	constantBuffer->Release();
+
 	vertexBuffer->Release();
 	indexBuffer->Release();
 	vertexLayout->Release();
 	vertexShader->Release();
 	pixelShader->Release();
+
+	shaderRV->Release();
+	sampler->Release();
+
 	delete[] vertices;
 	vertices = nullptr;
 }
