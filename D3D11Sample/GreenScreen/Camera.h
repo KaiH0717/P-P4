@@ -6,30 +6,29 @@ using namespace DirectX;
 class Camera
 {
 private:
-	void UpdateViewMatrix();
+	void UpdateView();
 	// storage type
 	XMFLOAT3 position;
 	XMFLOAT3 rotation;
+	XMFLOAT4X4 view;
+	XMFLOAT4X4 projection;
 	// speed type
 	XMVECTOR positionVector;
 	XMVECTOR rotationVector;
 	XMMATRIX viewMatrix;
 	XMMATRIX projectionMatrix;
-
-	const XMVECTOR DEFAULT_FORWARD_VECTOR = XMVectorSet(0.0f, 0.0f, 1.0f, 0.0f);
-	const XMVECTOR DEFAULT_UP_VECTOR = XMVectorSet(0.0f, 1.0f, 0.0f, 0.0f);
 public:
 	Camera();
-	void SetProjectionValues(float fovDegrees, float aspectRatio, float nearZ, float farZ);
+	~Camera();
 
-	const XMMATRIX& GetViewMatrix() const;
-	const XMMATRIX& GetProjectionMatrix() const;
+	void Reset();
 
-	const XMVECTOR& GetPositionVector() const;
-	const XMFLOAT3& GetPositionFloat3() const;
-	const XMVECTOR& GetRotationVector() const;
-	const XMFLOAT3& GetRotationFloat3() const;
+	const XMMATRIX GetViewMatrix() const;
+	const XMMATRIX GetProjectionMatrix() const;
+	const XMVECTOR GetPositionVector() const;
+	const XMVECTOR GetRotationVector() const;
 
+	void SetProjection(float fov, float aspectRatio, float nearPlane, float farPlane);
 	void SetPosition(const XMVECTOR& pos);
 	void SetPosition(float x, float y, float z);
 	void Move(const XMVECTOR& pos);

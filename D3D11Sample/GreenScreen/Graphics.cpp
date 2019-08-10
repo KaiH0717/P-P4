@@ -22,7 +22,7 @@ Graphics::Graphics(GW::SYSTEM::GWindow* attatchPoint)
 
 			// Initalize device
 			HRESULT hr = InitializeDevice();
-			
+			camera.SetPosition(0.0f, 2.0f, -5.0f);
 		}
 	}
 }
@@ -63,7 +63,6 @@ void Graphics::Render()
 			// Set active target for drawing, all array based D3D11 functions should use a syntax similar to below
 			ID3D11RenderTargetView* const targets[] = { myRenderTargetView };
 			myContext->OMSetRenderTargets(1, targets, myDepthStencilView);
-
 			// Clear screen
 			const float bg_Color[] = { 0, 0, 0, 1 };
 			myContext->ClearRenderTargetView(myRenderTargetView, bg_Color);
@@ -118,7 +117,7 @@ void Graphics::Render()
 			// projection
 			float ar = 0.0f;
 			mySurface->GetAspectRatio(ar);
-			camera.SetProjectionValues(90.0f, ar, 0.1f, 100.0f);
+			camera.SetProjection(90.0f, ar, 0.1f, 100.0f);
 			XMStoreFloat4x4(&cb.projection, camera.GetProjectionMatrix());
 			// map constant buffer
 			D3D11_MAPPED_SUBRESOURCE gpuBuffer;
@@ -129,7 +128,6 @@ void Graphics::Render()
 
 			myContext->VSSetConstantBuffers(0, 1, constants);
 			myContext->PSSetConstantBuffers(0, 1, constants);
-
 			myContext->PSSetShaderResources(0, 1, &shaderRV);
 			myContext->PSSetSamplers(0, 1, &sampler);
 			// draw
@@ -138,7 +136,6 @@ void Graphics::Render()
 			// Present Backbuffer using Swapchain object
 			// Framerate is currently unlocked, we suggest "MSI Afterburner" to track your current FPS and memory usage.
 			mySwapChain->Present(1, 0); // set first argument to 1 to enable vertical refresh sync with display
-
 			// Free any temp DX handles aquired this frame
 			myRenderTargetView->Release();
 		}
@@ -304,5 +301,9 @@ void Graphics::KeyboardHandle()
 	if (GetAsyncKeyState(VK_DOWN))
 	{
 		camera.Rotate(offset, 0.0f, 0.0f);
+	}
+	if (GetAsyncKeyState('R'))
+	{
+		camera.Reset();
 	}
 }

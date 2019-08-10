@@ -2,68 +2,57 @@
 
 Camera::Camera()
 {
-	this->position = XMFLOAT3(0.0f, 0.0f, 0.0f);
-	this->positionVector = XMLoadFloat3(&position);
-	this->rotation = XMFLOAT3(0.0f, 0.0f, 0.0f);
-	this->rotationVector = XMLoadFloat3(&rotation);
-	this->UpdateViewMatrix();
+	position = XMFLOAT3(0.0f, 0.0f, 0.0f);
+	positionVector = XMLoadFloat3(&position);
+	rotation = XMFLOAT3(0.0f, 0.0f, 0.0f);
+	rotationVector = XMLoadFloat3(&rotation);
+	view = XMFLOAT4X4(0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f);
+	viewMatrix = XMLoadFloat4x4(&view);
+	projection = XMFLOAT4X4(0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f);
+	projectionMatrix = XMLoadFloat4x4(&projection);
+	UpdateView();
 }
 
-void Camera::SetProjectionValues(float fovDegrees, float aspectRatio, float nearZ, float farZ)
+Camera::~Camera()
 {
-	float fovRadians = (fovDegrees / 360.0f) * XM_2PI;
-	this->projectionMatrix = XMMatrixPerspectiveFovLH(fovRadians, aspectRatio, nearZ, farZ);
 }
 
-const XMMATRIX& Camera::GetViewMatrix() const
+void Camera::Reset()
 {
-	return viewMatrix;
+	this->SetPosition(0.0f, 0.0f, -1.0f);
+	this->Rotate(0.0f, 0.0f, 0.0f);
 }
 
-const XMMATRIX& Camera::GetProjectionMatrix() const
-{
-	return projectionMatrix;
-}
+const XMMATRIX Camera::GetViewMatrix() const { return XMLoadFloat4x4(&this->view); }
+const XMMATRIX Camera::GetProjectionMatrix() const { return XMLoadFloat4x4(&this->projection); }
+const XMVECTOR Camera::GetPositionVector() const { return XMLoadFloat3(&this->position); }
+const XMVECTOR Camera::GetRotationVector() const { return XMLoadFloat3(&this->rotation); }
 
-const XMVECTOR& Camera::GetPositionVector() const
+void Camera::SetProjection(float fov, float aspectRatio, float nearPlane, float farPlane)
 {
-	return positionVector;
-}
-
-const XMFLOAT3& Camera::GetPositionFloat3() const
-{
-	return position;
-}
-
-const XMVECTOR& Camera::GetRotationVector() const
-{
-	return rotationVector;
-}
-
-const XMFLOAT3& Camera::GetRotationFloat3() const
-{
-	return rotation;
+	projectionMatrix = XMMatrixPerspectiveFovLH(XMConvertToRadians(fov), aspectRatio, nearPlane, farPlane);
+	XMStoreFloat4x4(&projection, projectionMatrix);
 }
 
 void Camera::SetPosition(const XMVECTOR& pos)
 {
-	XMStoreFloat3(&this->position, pos);
 	this->positionVector = pos;
-	this->UpdateViewMatrix();
+	XMStoreFloat3(&this->position, this->positionVector);
+	UpdateView();
 }
 
 void Camera::SetPosition(float x, float y, float z)
 {
 	this->position = XMFLOAT3(x, y, z);
 	this->positionVector = XMLoadFloat3(&this->position);
-	this->UpdateViewMatrix();
+	UpdateView();
 }
 
 void Camera::Move(const XMVECTOR& pos)
 {
 	this->positionVector += pos;
 	XMStoreFloat3(&this->position, this->positionVector);
-	this->UpdateViewMatrix();
+	UpdateView();
 }
 
 void Camera::Move(float x, float y, float z)
@@ -72,14 +61,14 @@ void Camera::Move(float x, float y, float z)
 	this->position.y += y;
 	this->position.z += z;
 	this->positionVector = XMLoadFloat3(&this->position);
-	this->UpdateViewMatrix();
+	UpdateView();
 }
 
 void Camera::Rotate(const XMVECTOR& rot)
 {
 	this->rotationVector += rot;
 	XMStoreFloat3(&this->rotation, this->rotationVector);
-	this->UpdateViewMatrix();
+	UpdateView();
 }
 
 void Camera::Rotate(float x, float y, float z)
@@ -88,19 +77,20 @@ void Camera::Rotate(float x, float y, float z)
 	this->rotation.y += y;
 	this->rotation.z += z;
 	this->rotationVector = XMLoadFloat3(&this->rotation);
-	this->UpdateViewMatrix();
+	UpdateView();
 }
 
-void Camera::UpdateViewMatrix()
+void Camera::UpdateView()
 {
 	//Calculate camera rotation matrix
 	XMMATRIX camRotationMatrix = XMMatrixRotationRollPitchYaw(this->rotation.x, this->rotation.y, this->rotation.z);
 	//Calculate unit vector of cam target based off camera forward value transformed by cam rotation matrix
-	XMVECTOR camTarget = XMVector3TransformCoord(this->DEFAULT_FORWARD_VECTOR, camRotationMatrix);
+	XMVECTOR camTarget = XMVector3TransformCoord(XMVectorSet(0.0f, 0.0f, 1.0f, 0.0f), camRotationMatrix);
 	//Adjust cam target to be offset by the camera's current position
 	camTarget += this->positionVector;
 	//Calculate up direction based on current rotation
-	XMVECTOR upDir = XMVector3TransformCoord(this->DEFAULT_UP_VECTOR, camRotationMatrix);
+	XMVECTOR upDir = XMVector3TransformCoord(XMVectorSet(0.0f, 1.0f, 0.0f, 0.0f), camRotationMatrix);
 	//Rebuild view matrix
 	this->viewMatrix = XMMatrixLookAtLH(this->positionVector, camTarget, upDir);
+	XMStoreFloat4x4(&this->view, this->viewMatrix);
 }
