@@ -2,14 +2,20 @@
 
 Camera::Camera()
 {
+	FOV = 90.0f;
+	aspectRatio = 1.0f;
+	nearPlane = 0.1f;
+	farPlane = 10.0f;
+
 	position = XMFLOAT3(0.0f, 0.0f, 0.0f);
 	positionVector = XMLoadFloat3(&position);
 	rotation = XMFLOAT3(0.0f, 0.0f, 0.0f);
 	rotationVector = XMLoadFloat3(&rotation);
-	view = XMFLOAT4X4(0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f);
-	viewMatrix = XMLoadFloat4x4(&view);
-	projection = XMFLOAT4X4(0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f, 0.0f);
-	projectionMatrix = XMLoadFloat4x4(&projection);
+
+	viewMatrix = XMMatrixIdentity();
+	XMStoreFloat4x4(&view, viewMatrix);
+	projectionMatrix = XMMatrixIdentity();
+	XMStoreFloat4x4(&projection, projectionMatrix);
 	UpdateView();
 }
 
@@ -23,20 +29,52 @@ void Camera::Reset()
 	this->Rotate(0.0f, 0.0f, 0.0f);
 }
 
-const XMMATRIX Camera::GetViewMatrix() const { return XMLoadFloat4x4(&this->view); }
-const XMMATRIX Camera::GetProjectionMatrix() const { return XMLoadFloat4x4(&this->projection); }
-const XMVECTOR Camera::GetPositionVector() const { return XMLoadFloat3(&this->position); }
-const XMVECTOR Camera::GetRotationVector() const { return XMLoadFloat3(&this->rotation); }
+float Camera::GetFOV() const { return FOV; }
+float Camera::GetAspectRatio() const { return aspectRatio; }
+float Camera::GetNearPlane() const { return nearPlane; }
+float Camera::GetFarPlane() const { return farPlane; }
+const XMMATRIX Camera::GetViewMatrix() const { return XMLoadFloat4x4(&view); }
+const XMMATRIX Camera::GetProjectionMatrix() const { return XMLoadFloat4x4(&projection); }
+const XMVECTOR Camera::GetPositionVector() const { return XMLoadFloat3(&position); }
+const XMVECTOR Camera::GetRotationVector() const { return XMLoadFloat3(&rotation); }
 
-void Camera::SetProjection(float fov, float aspectRatio, float nearPlane, float farPlane)
+void Camera::SetFOV(float fov)
 {
-	projectionMatrix = XMMatrixPerspectiveFovLH(XMConvertToRadians(fov), aspectRatio, nearPlane, farPlane);
+	this->FOV = fov;
+	SetProjection(this->FOV, this->aspectRatio, this->nearPlane, this->farPlane);
+}
+
+void Camera::SetAspectRatio(float aspectRatio)
+{
+	this->aspectRatio = aspectRatio;
+	SetProjection(this->FOV, this->aspectRatio, this->nearPlane, this->farPlane);
+}
+
+void Camera::SetNearPlane(float nearPlane)
+{
+	this->nearPlane = nearPlane;
+	SetProjection(this->FOV, this->aspectRatio, this->nearPlane, this->farPlane);
+}
+
+void Camera::SetFarPlane(float farPlane)
+{
+	this->farPlane = farPlane;
+	SetProjection(this->FOV, this->aspectRatio, this->nearPlane, this->farPlane);
+}
+
+void Camera::SetProjection(float FOV, float aspectRatio, float nearPlane, float farPlane)
+{
+	this->FOV = FOV;
+	this->aspectRatio = aspectRatio;
+	this->nearPlane = nearPlane;
+	this->farPlane = farPlane;
+	projectionMatrix = XMMatrixPerspectiveFovLH(XMConvertToRadians(this->FOV), this->aspectRatio, this->nearPlane, this->farPlane);
 	XMStoreFloat4x4(&projection, projectionMatrix);
 }
 
-void Camera::SetPosition(const XMVECTOR& pos)
+void Camera::SetPosition(const XMVECTOR& position)
 {
-	this->positionVector = pos;
+	this->positionVector = position;
 	XMStoreFloat3(&this->position, this->positionVector);
 	UpdateView();
 }
@@ -48,9 +86,9 @@ void Camera::SetPosition(float x, float y, float z)
 	UpdateView();
 }
 
-void Camera::Move(const XMVECTOR& pos)
+void Camera::Move(const XMVECTOR& position)
 {
-	this->positionVector += pos;
+	this->positionVector += position;
 	XMStoreFloat3(&this->position, this->positionVector);
 	UpdateView();
 }
@@ -64,9 +102,9 @@ void Camera::Move(float x, float y, float z)
 	UpdateView();
 }
 
-void Camera::Rotate(const XMVECTOR& rot)
+void Camera::Rotate(const XMVECTOR& rotation)
 {
-	this->rotationVector += rot;
+	this->rotationVector += rotation;
 	XMStoreFloat3(&this->rotation, this->rotationVector);
 	UpdateView();
 }
@@ -78,6 +116,46 @@ void Camera::Rotate(float x, float y, float z)
 	this->rotation.z += z;
 	this->rotationVector = XMLoadFloat3(&this->rotation);
 	UpdateView();
+}
+
+void Camera::IncreaseFOV(float offset)
+{
+	this->FOV += offset;
+	SetProjection(this->FOV, this->aspectRatio, this->nearPlane, this->farPlane);
+}
+
+void Camera::DecreaseFOV(float offset)
+{
+	this->FOV -= offset;
+	SetProjection(this->FOV, this->aspectRatio, this->nearPlane, this->farPlane);
+}
+
+void Camera::IncreaseNearPlane(float offset)
+{
+	this->nearPlane += offset;
+	SetProjection(this->FOV, this->aspectRatio, this->nearPlane, this->farPlane);
+}
+
+void Camera::DecreaseNearPlane(float offset)
+{
+	this->nearPlane -= offset;
+	if (this->nearPlane < 0.1f)
+		this->nearPlane = 0.1f;
+	SetProjection(this->FOV, this->aspectRatio, this->nearPlane, this->farPlane);
+}
+
+void Camera::IncreaseFarPlane(float offset)
+{
+	this->farPlane += offset;
+	SetProjection(this->FOV, this->aspectRatio, this->nearPlane, this->farPlane);
+}
+
+void Camera::DecreaseFarPlane(float offset)
+{
+	this->farPlane -= offset;
+	if (this->farPlane < 10.0f)
+		this->farPlane = 10.0f;
+	SetProjection(this->FOV, this->aspectRatio, this->nearPlane, this->farPlane);
 }
 
 void Camera::UpdateView()

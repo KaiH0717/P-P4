@@ -17,7 +17,7 @@ cbuffer ConstantBuffer : register(b0)
     float4 lightPos[2];
     float4 lightNor[2];
     float4 lightColor[2];
-    float lightRadius;
+    float4 lightRadius;
 };
 
 float4 main(OutputVertex inputPixel) : SV_TARGET

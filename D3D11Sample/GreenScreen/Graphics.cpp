@@ -23,6 +23,7 @@ Graphics::Graphics(GW::SYSTEM::GWindow* attatchPoint)
 			// Initalize device
 			HRESULT hr = InitializeDevice();
 			camera.SetPosition(0.0f, 2.0f, -5.0f);
+			camera.SetProjection(90.0f, 1.0f, 0.1f, 20.0f);
 		}
 	}
 }
@@ -66,7 +67,7 @@ void Graphics::Render()
 			// Clear screen
 			const float bg_Color[] = { 0, 0, 0, 1 };
 			myContext->ClearRenderTargetView(myRenderTargetView, bg_Color);
-			
+
 			// keyboard inputs
 			KeyboardHandle();
 
@@ -82,29 +83,31 @@ void Graphics::Render()
 			myContext->OMSetRenderTargets(1, &myRenderTargetView, nullptr);
 
 			// lighting
+			static float rot = 0.0f; rot += 0.1f;
 			// directional lighting
-			XMVECTOR pos = { 0.0f, 0.0f, 0.0f, 1.0f };
-			XMVECTOR nor = { 0.577f, 0.577f, -0.577f, 0.0f };
-			XMVECTOR col = { 0.75f, 0.75f, 0.94f, 1.0f };
-			XMStoreFloat4(&cb.lightPos[0], pos);
-			XMStoreFloat4(&cb.lightNormal[0], XMVector4Normalize(nor));
-			XMStoreFloat4(&cb.lightColor[0], col);
+			//XMVECTOR newPos =
+			dLight.SetPosition(0.0f, 0.0f, 0.0f);
+			dLight.SetNormal(0.577f, 0.577f, -0.577f);
+			dLight.SetColor(0.75f, 0.75f, 0.94f, 1.0f);
+			XMStoreFloat4(&cb.lightPos[0], dLight.GetPositionVector());
+			XMStoreFloat4(&cb.lightNormal[0], dLight.GetNormalVectorNormalized());
+			XMStoreFloat4(&cb.lightColor[0], dLight.GetColor());
 			// point light
-			pos = { -1.0f, 0.5f, 1.0f, 1.0f };
-			nor = { 0.0f, 0.0f, 0.0f, 0.0f };
-			col = { 1.0f, 0.0f, 0.0f, 1.0f };
-			XMStoreFloat4(&cb.lightPos[1], pos);
-			XMStoreFloat4(&cb.lightNormal[1], XMVector4Normalize(nor));
-			XMStoreFloat4(&cb.lightColor[1], col);
+			pLight.SetPosition(-1.0f, 0.5f, 1.0f);
+			pLight.SetNormal(0.0f, 0.0f, 0.0f);
+			pLight.SetColor(1.0f, 0.0f, 0.0f, 1.0f);
+			XMStoreFloat4(&cb.lightPos[1], pLight.GetPositionVector());
+			XMStoreFloat4(&cb.lightNormal[1], pLight.GetNormalVectorNormalized());
+			XMStoreFloat4(&cb.lightColor[1], pLight.GetColor());
 			// point light radius
-			if (radius > 5.0f)
+			if (radius > 4.0f)
 				shrink = true;
 			else if (radius <= 1.0f)
 				shrink = false;
 			if (shrink)
-				radius -= 0.01f;
+				radius -= 0.03f;
 			else
-				radius += 0.01f;
+				radius += 0.03f;
 			XMVECTOR lightRad = { radius, 0.0f, 0.0f, 0.0f };
 			XMStoreFloat4(&cb.lightRadius, lightRad);
 
@@ -117,17 +120,17 @@ void Graphics::Render()
 			// projection
 			float ar = 0.0f;
 			mySurface->GetAspectRatio(ar);
-			camera.SetProjection(90.0f, ar, 0.1f, 100.0f);
+			camera.SetAspectRatio(ar);
+			//camera.SetProjection(camera.GetFOV(), ar, camera.GetNearPlane(), camera);
 			XMStoreFloat4x4(&cb.projection, camera.GetProjectionMatrix());
 			// map constant buffer
 			D3D11_MAPPED_SUBRESOURCE gpuBuffer;
 			myContext->Map(constantBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &gpuBuffer);
 			memcpy(gpuBuffer.pData, &cb, sizeof(ConstantBuffer));
 			myContext->Unmap(constantBuffer, 0);
-			ID3D11Buffer* constants[] = { constantBuffer };
 
-			myContext->VSSetConstantBuffers(0, 1, constants);
-			myContext->PSSetConstantBuffers(0, 1, constants);
+			myContext->VSSetConstantBuffers(0, 1, &constantBuffer);
+			myContext->PSSetConstantBuffers(0, 1, &constantBuffer);
 			myContext->PSSetShaderResources(0, 1, &shaderRV);
 			myContext->PSSetSamplers(0, 1, &sampler);
 			// draw
@@ -156,13 +159,15 @@ HRESULT Graphics::InitializeDevice()
 		{"POSITION", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0},
 		{"TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT	  , 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0},
 		{"NORMAL"  , 0, DXGI_FORMAT_R32G32B32_FLOAT	  , 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0},
-		{"COLOR", 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0}
+		{"COLOR"   , 0, DXGI_FORMAT_R32G32B32A32_FLOAT, 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0}
 	};
 	hr = myDevice->CreateInputLayout(layout, ARRAYSIZE(layout), VertexShader, sizeof(VertexShader), &vertexLayout);
 
 	// fill vertices
 	Mesh mesh("StoneHenge", (void*)StoneHenge_indicies, ARRAYSIZE(StoneHenge_data), ARRAYSIZE(StoneHenge_indicies));
 	meshes.push_back(mesh);
+	//Mesh mesh1("Sword", (void*)lionheart_indicies, ARRAYSIZE(lionheart_data), ARRAYSIZE(lionheart_indicies));
+	//meshes.push_back(mesh1);
 	for (size_t i = 0; i < mesh.GetVertexCount(); i++)
 	{
 		mesh.GetVertices()[i].position.x = StoneHenge_data[i].pos[0] * 0.1f;
@@ -179,6 +184,22 @@ HRESULT Graphics::InitializeDevice()
 
 		mesh.GetVertices()[i].color = { 1.0f, 1.0f, 1.0f, 1.0f };
 	}
+	//for (size_t i = 0; i < mesh1.GetVertexCount(); i++)
+	//{
+	//	mesh1.GetVertices()[i].position.x = lionheart_data[i].pos[0] * 0.1f;
+	//	mesh1.GetVertices()[i].position.y = lionheart_data[i].pos[1] * 0.1f;
+	//	mesh1.GetVertices()[i].position.z = lionheart_data[i].pos[2] * 0.1f;
+	//	mesh1.GetVertices()[i].position.w = 1.0f;
+
+	//	mesh1.GetVertices()[i].texture.x = lionheart_data[i].uvw[0];
+	//	mesh1.GetVertices()[i].texture.y = lionheart_data[i].uvw[1];
+
+	//	mesh1.GetVertices()[i].normal.x = lionheart_data[i].nrm[0];
+	//	mesh1.GetVertices()[i].normal.y = lionheart_data[i].nrm[1];
+	//	mesh1.GetVertices()[i].normal.z = lionheart_data[i].nrm[2];
+
+	//	mesh1.GetVertices()[i].color = { 1.0f, 1.0f, 1.0f, 1.0f };
+	//}
 	// describe vertex data and create vertex buffer
 	hr = CreateBuffer(myDevice, &vertexBuffer, D3D11_BIND_VERTEX_BUFFER, sizeof(Vertex) * mesh.GetVertexCount(), mesh.GetVertices());
 	// describe index data and create index buffer
@@ -225,25 +246,35 @@ HRESULT Graphics::CreateBuffer(ID3D11Device* device, ID3D11Buffer** buffer, UINT
 	bufferDesc.ByteWidth = byteWidth;
 	bufferDesc.MiscFlags = 0;
 	bufferDesc.StructureByteStride = 0;
+	subRsrcData.pSysMem = pSysMem;
 	switch (bindFlag)
 	{
 	case D3D11_BIND_VERTEX_BUFFER:
 		bufferDesc.CPUAccessFlags = 0;
-		bufferDesc.Usage = D3D11_USAGE_DEFAULT;
-		subRsrcData.pSysMem = pSysMem;
-		device->CreateBuffer(&bufferDesc, &subRsrcData, buffer);
-		return S_OK;
+		bufferDesc.Usage = D3D11_USAGE_IMMUTABLE;
+		return device->CreateBuffer(&bufferDesc, &subRsrcData, buffer);
 	case D3D11_BIND_INDEX_BUFFER:
 		bufferDesc.CPUAccessFlags = 0;
-		bufferDesc.Usage = D3D11_USAGE_DEFAULT;
-		subRsrcData.pSysMem = pSysMem;
-		device->CreateBuffer(&bufferDesc, &subRsrcData, buffer);
-		return S_OK;
+		bufferDesc.Usage = D3D11_USAGE_IMMUTABLE;
+		return device->CreateBuffer(&bufferDesc, &subRsrcData, buffer);
 	case D3D11_BIND_CONSTANT_BUFFER:
 		bufferDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
 		bufferDesc.Usage = D3D11_USAGE_DYNAMIC;
-		device->CreateBuffer(&bufferDesc, nullptr, buffer);
-		return S_OK;
+		return device->CreateBuffer(&bufferDesc, nullptr, buffer);
+	case D3D11_BIND_SHADER_RESOURCE:
+		return E_NOTIMPL;
+	case D3D11_BIND_STREAM_OUTPUT:
+		return E_NOTIMPL;
+	case D3D11_BIND_RENDER_TARGET:
+		return E_NOTIMPL;
+	case D3D11_BIND_DEPTH_STENCIL:
+		return E_NOTIMPL;
+	case D3D11_BIND_UNORDERED_ACCESS:
+		return E_NOTIMPL;
+	case D3D11_BIND_DECODER:
+		return E_NOTIMPL;
+	case D3D11_BIND_VIDEO_ENCODER:
+		return E_NOTIMPL;
 	default:
 		return S_FALSE;
 	}
@@ -283,27 +314,63 @@ void Graphics::KeyboardHandle()
 		camera.Move(0.0f, -offset, 0.0f);
 	}
 	// yaw left
-	if (GetAsyncKeyState(VK_LEFT))
+	if (GetAsyncKeyState('J'))
 	{
 		camera.Rotate(0.0f, -offset, 0.0f);
 	}
 	// yaw right
-	if (GetAsyncKeyState(VK_RIGHT))
+	if (GetAsyncKeyState('L'))
 	{
 		camera.Rotate(0.0f, offset, 0.0f);
 	}
 	// pitch up
-	if (GetAsyncKeyState(VK_UP))
+	if (GetAsyncKeyState('I'))
 	{
 		camera.Rotate(-offset, 0.0f, 0.0f);
 	}
 	// pitch down
-	if (GetAsyncKeyState(VK_DOWN))
+	if (GetAsyncKeyState('K'))
 	{
 		camera.Rotate(offset, 0.0f, 0.0f);
 	}
-	if (GetAsyncKeyState('R'))
+	// roll left
+	if (GetAsyncKeyState('U'))
 	{
-		camera.Reset();
+		camera.Rotate(0.0f, 0.0f, offset);
+	}
+	// roll right
+	if (GetAsyncKeyState('O'))
+	{
+		camera.Rotate(0.0f, 0.0f, -offset);
+	}
+	// increase fov
+	if (GetAsyncKeyState('1'))
+	{
+		camera.IncreaseFOV(offset * 10.0f);
+	}
+	// decrease fov
+	if (GetAsyncKeyState('2'))
+	{
+		camera.DecreaseFOV(offset * 10.0f);
+	}
+	// increase near plane
+	if (GetAsyncKeyState('3'))
+	{
+		camera.IncreaseNearPlane(offset * 5.0f);
+	}
+	// decrease near plane
+	if (GetAsyncKeyState('4'))
+	{
+		camera.DecreaseNearPlane(offset * 5.0f);
+	}
+	// increase far plane
+	if (GetAsyncKeyState('5'))
+	{
+		camera.IncreaseFarPlane(offset * 5.0f);
+	}
+	// decrease far plane
+	if (GetAsyncKeyState('6'))
+	{
+		camera.DecreaseFarPlane(offset * 5.0f);
 	}
 }

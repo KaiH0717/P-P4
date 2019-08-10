@@ -7,6 +7,11 @@ class Camera
 {
 private:
 	void UpdateView();
+	// attributes
+	float FOV;
+	float aspectRatio;
+	float nearPlane;
+	float farPlane;
 	// storage type
 	XMFLOAT3 position;
 	XMFLOAT3 rotation;
@@ -23,16 +28,31 @@ public:
 
 	void Reset();
 
+	float GetFOV() const;
+	float GetAspectRatio() const;
+	float GetNearPlane() const;
+	float GetFarPlane() const;
 	const XMMATRIX GetViewMatrix() const;
 	const XMMATRIX GetProjectionMatrix() const;
 	const XMVECTOR GetPositionVector() const;
 	const XMVECTOR GetRotationVector() const;
 
+	void SetFOV(float fov);
+	void SetAspectRatio(float aspectRatio);
+	void SetNearPlane(float nearPlane);
+	void SetFarPlane(float farPlane);
 	void SetProjection(float fov, float aspectRatio, float nearPlane, float farPlane);
-	void SetPosition(const XMVECTOR& pos);
+	void SetPosition(const XMVECTOR& position);
 	void SetPosition(float x, float y, float z);
-	void Move(const XMVECTOR& pos);
+	void Move(const XMVECTOR& position);
 	void Move(float x, float y, float z);
-	void Rotate(const XMVECTOR& rot);
+	void Rotate(const XMVECTOR& rotation);
 	void Rotate(float x, float y, float z);
+
+	void IncreaseFOV(float offset);
+	void DecreaseFOV(float offset);
+	void IncreaseNearPlane(float offset);
+	void DecreaseNearPlane(float offset);
+	void IncreaseFarPlane(float offset);
+	void DecreaseFarPlane(float offset);
 };

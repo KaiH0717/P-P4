@@ -108,6 +108,8 @@
     </Link>
     <FxCompile>
       <ShaderModel>4.0_level_9_3</ShaderModel>
+      <VariableName>%(Filename)</VariableName>
+      <HeaderFileOutput>%(Filename).csh</HeaderFileOutput>
     </FxCompile>
   </ItemDefinitionGroup>
   <ItemDefinitionGroup Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">
@@ -148,6 +150,7 @@
     <ClInclude Include="Camera.h" />
     <ClInclude Include="DDSTextureLoader.h" />
     <ClInclude Include="Graphics.h" />
+    <ClInclude Include="Light.h" />
     <ClInclude Include="Mesh.h" />
   </ItemGroup>
   <ItemGroup>
@@ -156,6 +159,7 @@
     <ClCompile Include="Camera.cpp" />
     <ClCompile Include="DDSTextureLoader.cpp" />
     <ClCompile Include="Graphics.cpp" />
+    <ClCompile Include="Light.cpp" />
     <ClCompile Include="main.cpp" />
     <ClCompile Include="Mesh.cpp" />
   </ItemGroup>

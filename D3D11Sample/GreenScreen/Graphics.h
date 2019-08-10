@@ -12,12 +12,11 @@
 
 // Include DirectX11 for interface access
 #include <d3d11.h>
-#include <thread>
-#include <mutex>
 
-// include my own files
+// include my own files and other helpful files
 #include "Camera.h"
 #include "Mesh.h"
+#include "Light.h"
 #include <vector>
 
 struct ConstantBuffer
@@ -49,7 +48,7 @@ class Graphics
 	ID3D11InputLayout* vertexLayout = nullptr;
 	ID3D11VertexShader* vertexShader = nullptr;
 	ID3D11PixelShader* pixelShader = nullptr;
-
+	// textures
 	ID3D11ShaderResourceView* shaderRV = nullptr;
 	ID3D11SamplerState* sampler = nullptr;
 
@@ -58,6 +57,8 @@ class Graphics
 	bool shrink = false;
 	float radius = 1.0f;
 	Camera camera;
+	Light dLight;
+	Light pLight;
 public:
 	// Init constructor
 	Graphics(GW::SYSTEM::GWindow* attatchPoint);
