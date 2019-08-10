@@ -38,7 +38,7 @@ OutputVertex main(InputVertex input)
     // directional lighting
     float ratio = saturate(dot((float3) lightNor[0], output.normal) + 0.25f);
     float4 color1 = lerp(float4(0.0f, 0.0f, 0.0f, 1.0f), lightColor[0], ratio);
-
+    // point lighting
     float4 pointLightDir = normalize(lightPos[1] - output.position);
     float pointLightRatio = saturate(dot((float3) pointLightDir, output.normal));
     float attenuation = 1.0f - saturate((length(lightPos[1] - output.position) / lightRadius.x));

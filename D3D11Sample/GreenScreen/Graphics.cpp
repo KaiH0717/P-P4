@@ -3,8 +3,8 @@
 // shader includes
 #include "VertexShader.csh"
 #include "PixelShader.csh"
-#include "../../My assets/test pyramid.h"
 #include "../../My assets/StoneHenge.h"
+#include "../../My assets/lionheart.h"
 #include "DDSTextureLoader.h"
 #include <iostream>
 
@@ -20,8 +20,9 @@ Graphics::Graphics(GW::SYSTEM::GWindow* attatchPoint)
 			mySurface->GetSwapchain((void**)& mySwapChain);
 			mySurface->GetContext((void**)& myContext);
 
-			// TODO: Create new DirectX stuff here! (Buffers, Shaders, Layouts, Views, Textures, etc...)
+			// Initalize device
 			HRESULT hr = InitializeDevice();
+			
 		}
 	}
 }
@@ -55,7 +56,7 @@ void Graphics::Render()
 			// Grab the Z Buffer if one was requested
 			if (G_SUCCESS(mySurface->GetDepthStencilView((void**)& myDepthStencilView)))
 			{
-				myContext->ClearDepthStencilView(myDepthStencilView, D3D11_CLEAR_DEPTH, 1, 0); // clear it to Z exponential Far.
+				myContext->ClearDepthStencilView(myDepthStencilView, D3D11_CLEAR_DEPTH, 1.0f, 0); // clear it to Z exponential Far.
 				myDepthStencilView->Release();
 			}
 
@@ -63,11 +64,13 @@ void Graphics::Render()
 			ID3D11RenderTargetView* const targets[] = { myRenderTargetView };
 			myContext->OMSetRenderTargets(1, targets, myDepthStencilView);
 
-			// Clear the screen to green
-			const float d_green[] = { 0, 0, 0, 1 }; // "DirectX Green"
-			myContext->ClearRenderTargetView(myRenderTargetView, d_green);
+			// Clear screen
+			const float bg_Color[] = { 0, 0, 0, 1 };
+			myContext->ClearRenderTargetView(myRenderTargetView, bg_Color);
+			
+			// keyboard inputs
+			KeyboardHandle();
 
-			// TODO: Set your shaders, Update & Set your constant buffers, Attatch your vertex & index buffers, Set your InputLayout & Topology & Draw!
 			// setup pipeline
 			UINT strides = sizeof(Vertex);
 			UINT offsets = 0;
@@ -80,12 +83,14 @@ void Graphics::Render()
 			myContext->OMSetRenderTargets(1, &myRenderTargetView, nullptr);
 
 			// lighting
+			// directional lighting
 			XMVECTOR pos = { 0.0f, 0.0f, 0.0f, 1.0f };
 			XMVECTOR nor = { 0.577f, 0.577f, -0.577f, 0.0f };
 			XMVECTOR col = { 0.75f, 0.75f, 0.94f, 1.0f };
 			XMStoreFloat4(&cb.lightPos[0], pos);
 			XMStoreFloat4(&cb.lightNormal[0], XMVector4Normalize(nor));
 			XMStoreFloat4(&cb.lightColor[0], col);
+			// point light
 			pos = { -1.0f, 0.5f, 1.0f, 1.0f };
 			nor = { 0.0f, 0.0f, 0.0f, 0.0f };
 			col = { 1.0f, 0.0f, 0.0f, 1.0f };
@@ -93,39 +98,29 @@ void Graphics::Render()
 			XMStoreFloat4(&cb.lightNormal[1], XMVector4Normalize(nor));
 			XMStoreFloat4(&cb.lightColor[1], col);
 			// point light radius
-			XMStoreFloat4(&cb.lightRadius, lightRad);
-			if (cb.lightRadius.x > 10.0f)
-			{
+			if (radius > 5.0f)
 				shrink = true;
-			}
-			else if (cb.lightRadius.x < 1.0f)
-			{
+			else if (radius <= 1.0f)
 				shrink = false;
-			}
 			if (shrink)
-			{
-				cb.lightRadius.x -= 0.3f;
-			}
+				radius -= 0.01f;
 			else
-			{
-				cb.lightRadius.x += 0.3f;
-			}
+				radius += 0.01f;
+			XMVECTOR lightRad = { radius, 0.0f, 0.0f, 0.0f };
 			XMStoreFloat4(&cb.lightRadius, lightRad);
+
 			// world
 			XMMATRIX temp = XMMatrixIdentity();
 			temp = XMMatrixTranslation(0.0f, 0.0f, 0.5f);
 			XMStoreFloat4x4(&cb.world, temp);
 			// view
-			XMVECTOR eye = { 0.0f, 2.0f, -3.0f };
-			XMVECTOR focus = { 0.0f, 0.0f, 0.0f };
-			XMVECTOR up = { 0.0f, 1.0f, 0.0f };
-			temp = XMMatrixLookAtLH(eye, focus, up);
-			XMStoreFloat4x4(&cb.view, temp);
+			XMStoreFloat4x4(&cb.view, camera.GetViewMatrix());
 			// projection
 			float ar = 0.0f;
 			mySurface->GetAspectRatio(ar);
-			temp = XMMatrixPerspectiveFovLH(XM_PIDIV2, ar, 0.1f, 10.0f);
-			XMStoreFloat4x4(&cb.projection, temp);
+			camera.SetProjectionValues(90.0f, ar, 0.1f, 100.0f);
+			XMStoreFloat4x4(&cb.projection, camera.GetProjectionMatrix());
+			// map constant buffer
 			D3D11_MAPPED_SUBRESOURCE gpuBuffer;
 			myContext->Map(constantBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &gpuBuffer);
 			memcpy(gpuBuffer.pData, &cb, sizeof(ConstantBuffer));
@@ -138,12 +133,11 @@ void Graphics::Render()
 			myContext->PSSetShaderResources(0, 1, &shaderRV);
 			myContext->PSSetSamplers(0, 1, &sampler);
 			// draw
-			//myContext->Draw(numVertices, 0);
-			myContext->DrawIndexed(numIndicies, 0, 0);
+			myContext->DrawIndexed(meshes[0].GetIndexCount(), 0, 0);
 
 			// Present Backbuffer using Swapchain object
 			// Framerate is currently unlocked, we suggest "MSI Afterburner" to track your current FPS and memory usage.
-			mySwapChain->Present(0, 0); // set first argument to 1 to enable vertical refresh sync with display
+			mySwapChain->Present(1, 0); // set first argument to 1 to enable vertical refresh sync with display
 
 			// Free any temp DX handles aquired this frame
 			myRenderTargetView->Release();
@@ -170,53 +164,35 @@ HRESULT Graphics::InitializeDevice()
 	hr = myDevice->CreateInputLayout(layout, ARRAYSIZE(layout), VertexShader, sizeof(VertexShader), &vertexLayout);
 
 	// fill vertices
-	//numVertices = ARRAYSIZE(test_pyramid_data);
-	//numIndicies = ARRAYSIZE(test_pyramid_indicies);
-	numVertices = ARRAYSIZE(StoneHenge_data);
-	numIndicies = ARRAYSIZE(StoneHenge_indicies);
-	vertices = new Vertex[numVertices];
-	//for (size_t i = 0; i < numVertices; i++)
-	//{
-	//	vertices[i].position.x = test_pyramid_data[i].pos[0];
-	//	vertices[i].position.y = test_pyramid_data[i].pos[1];
-	//	vertices[i].position.z = test_pyramid_data[i].pos[2];
-	//	vertices[i].position.w = 1.0f;
-	//	vertices[i].texture.x = test_pyramid_data[i].uvw[0];
-	//	vertices[i].texture.y = test_pyramid_data[i].uvw[1];
-	//	vertices[i].texture.z = 1.0f;
-	//	vertices[i].texture.w = 1.0f;
-	//	vertices[i].normal.x = test_pyramid_data[i].nrm[0];
-	//	vertices[i].normal.y = test_pyramid_data[i].nrm[1];
-	//	vertices[i].normal.z = test_pyramid_data[i].nrm[2];
-	//	vertices[i].normal.w = 0.0f;
-	//}
-	for (size_t i = 0; i < numVertices; i++)
+	Mesh mesh("StoneHenge", (void*)StoneHenge_indicies, ARRAYSIZE(StoneHenge_data), ARRAYSIZE(StoneHenge_indicies));
+	meshes.push_back(mesh);
+	for (size_t i = 0; i < mesh.GetVertexCount(); i++)
 	{
-		vertices[i].position.x = StoneHenge_data[i].pos[0] * 0.1f;
-		vertices[i].position.y = StoneHenge_data[i].pos[1] * 0.1f;
-		vertices[i].position.z = StoneHenge_data[i].pos[2] * 0.1f;
-		vertices[i].position.w = 1.0f;
+		mesh.GetVertices()[i].position.x = StoneHenge_data[i].pos[0] * 0.1f;
+		mesh.GetVertices()[i].position.y = StoneHenge_data[i].pos[1] * 0.1f;
+		mesh.GetVertices()[i].position.z = StoneHenge_data[i].pos[2] * 0.1f;
+		mesh.GetVertices()[i].position.w = 1.0f;
 
-		vertices[i].texture.x = StoneHenge_data[i].uvw[0];
-		vertices[i].texture.y = StoneHenge_data[i].uvw[1];
+		mesh.GetVertices()[i].texture.x = StoneHenge_data[i].uvw[0];
+		mesh.GetVertices()[i].texture.y = StoneHenge_data[i].uvw[1];
 
-		vertices[i].normal.x = StoneHenge_data[i].nrm[0];
-		vertices[i].normal.y = StoneHenge_data[i].nrm[1];
-		vertices[i].normal.z = StoneHenge_data[i].nrm[2];
+		mesh.GetVertices()[i].normal.x = StoneHenge_data[i].nrm[0];
+		mesh.GetVertices()[i].normal.y = StoneHenge_data[i].nrm[1];
+		mesh.GetVertices()[i].normal.z = StoneHenge_data[i].nrm[2];
 
-		vertices[i].color = { 1.0f, 1.0f, 1.0f, 1.0f };
+		mesh.GetVertices()[i].color = { 1.0f, 1.0f, 1.0f, 1.0f };
 	}
-	indicies = (void*)StoneHenge_indicies;
 	// describe vertex data and create vertex buffer
-	hr = CreateBuffer(myDevice, &vertexBuffer, D3D11_BIND_VERTEX_BUFFER, sizeof(Vertex) * numVertices, vertices);
+	hr = CreateBuffer(myDevice, &vertexBuffer, D3D11_BIND_VERTEX_BUFFER, sizeof(Vertex) * mesh.GetVertexCount(), mesh.GetVertices());
 	// describe index data and create index buffer
-	hr = CreateBuffer(myDevice, &indexBuffer, D3D11_BIND_INDEX_BUFFER, sizeof(unsigned int) * numIndicies, indicies);
+	hr = CreateBuffer(myDevice, &indexBuffer, D3D11_BIND_INDEX_BUFFER, sizeof(unsigned int) * mesh.GetIndexCount(), mesh.GetIndices());
 	// describe constant variables and create constant buffer
 	hr = CreateBuffer(myDevice, &constantBuffer, D3D11_BIND_CONSTANT_BUFFER, sizeof(ConstantBuffer), nullptr);
 	// load texture
 	hr = CreateDDSTextureFromFile(myDevice, L"../../My assets/StoneHenge.dds", nullptr, &shaderRV);
 	// create sample
-	D3D11_SAMPLER_DESC sampDesc = {};
+	D3D11_SAMPLER_DESC sampDesc;
+	ZeroMemory(&sampDesc, sizeof(D3D11_SAMPLER_DESC));
 	sampDesc.Filter = D3D11_FILTER_MIN_MAG_MIP_LINEAR;
 	sampDesc.AddressU = D3D11_TEXTURE_ADDRESS_WRAP;
 	sampDesc.AddressV = D3D11_TEXTURE_ADDRESS_WRAP;
@@ -240,9 +216,6 @@ void Graphics::CleanDevice()
 
 	shaderRV->Release();
 	sampler->Release();
-
-	delete[] vertices;
-	vertices = nullptr;
 }
 
 HRESULT Graphics::CreateBuffer(ID3D11Device* device, ID3D11Buffer** buffer, UINT bindFlag, UINT byteWidth, const void* pSysMem)
@@ -251,32 +224,85 @@ HRESULT Graphics::CreateBuffer(ID3D11Device* device, ID3D11Buffer** buffer, UINT
 	D3D11_SUBRESOURCE_DATA subRsrcData;
 	ZeroMemory(&bufferDesc, sizeof(D3D11_BUFFER_DESC));
 	ZeroMemory(&subRsrcData, sizeof(D3D11_SUBRESOURCE_DATA));
+	bufferDesc.BindFlags = bindFlag;
 	bufferDesc.ByteWidth = byteWidth;
 	bufferDesc.MiscFlags = 0;
 	bufferDesc.StructureByteStride = 0;
 	switch (bindFlag)
 	{
 	case D3D11_BIND_VERTEX_BUFFER:
-		bufferDesc.BindFlags = bindFlag;
 		bufferDesc.CPUAccessFlags = 0;
 		bufferDesc.Usage = D3D11_USAGE_DEFAULT;
 		subRsrcData.pSysMem = pSysMem;
 		device->CreateBuffer(&bufferDesc, &subRsrcData, buffer);
 		return S_OK;
 	case D3D11_BIND_INDEX_BUFFER:
-		bufferDesc.BindFlags = bindFlag;
 		bufferDesc.CPUAccessFlags = 0;
 		bufferDesc.Usage = D3D11_USAGE_DEFAULT;
 		subRsrcData.pSysMem = pSysMem;
 		device->CreateBuffer(&bufferDesc, &subRsrcData, buffer);
 		return S_OK;
 	case D3D11_BIND_CONSTANT_BUFFER:
-		bufferDesc.BindFlags = bindFlag;
 		bufferDesc.CPUAccessFlags = D3D11_CPU_ACCESS_WRITE;
 		bufferDesc.Usage = D3D11_USAGE_DYNAMIC;
 		device->CreateBuffer(&bufferDesc, nullptr, buffer);
 		return S_OK;
 	default:
 		return S_FALSE;
+	}
+}
+
+void Graphics::KeyboardHandle()
+{
+	float offset = 0.01f;
+	// move forward
+	if (GetAsyncKeyState('W'))
+	{
+		camera.Move(0.0f, 0.0f, offset);
+	}
+	// move left
+	if (GetAsyncKeyState('A'))
+	{
+		camera.Move(-offset, 0.0f, 0.0f);
+	}
+	// move backwards
+	if (GetAsyncKeyState('S'))
+	{
+		camera.Move(0.0f, 0.0f, -offset);
+	}
+	// move right
+	if (GetAsyncKeyState('D'))
+	{
+		camera.Move(offset, 0.0f, 0.0f);
+	}
+	// move up
+	if (GetAsyncKeyState('Q'))
+	{
+		camera.Move(0.0f, offset, 0.0f);
+	}
+	// move down
+	if (GetAsyncKeyState('E'))
+	{
+		camera.Move(0.0f, -offset, 0.0f);
+	}
+	// yaw left
+	if (GetAsyncKeyState(VK_LEFT))
+	{
+		camera.Rotate(0.0f, -offset, 0.0f);
+	}
+	// yaw right
+	if (GetAsyncKeyState(VK_RIGHT))
+	{
+		camera.Rotate(0.0f, offset, 0.0f);
+	}
+	// pitch up
+	if (GetAsyncKeyState(VK_UP))
+	{
+		camera.Rotate(-offset, 0.0f, 0.0f);
+	}
+	// pitch down
+	if (GetAsyncKeyState(VK_DOWN))
+	{
+		camera.Rotate(offset, 0.0f, 0.0f);
 	}
 }

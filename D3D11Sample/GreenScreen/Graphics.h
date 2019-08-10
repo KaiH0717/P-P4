@@ -12,16 +12,13 @@
 
 // Include DirectX11 for interface access
 #include <d3d11.h>
-#include <DirectXMath.h>
-using namespace DirectX;
+#include <thread>
+#include <mutex>
 
-struct Vertex
-{
-	XMFLOAT4 position;
-	XMFLOAT2 texture;
-	XMFLOAT3 normal;
-	XMFLOAT4 color;
-};
+// include my own files
+#include "Camera.h"
+#include "Mesh.h"
+#include <vector>
 
 struct ConstantBuffer
 {
@@ -45,7 +42,7 @@ class Graphics
 	IDXGISwapChain* mySwapChain = nullptr;
 	ID3D11DeviceContext* myContext = nullptr;
 
-	// TODO: Add your own D3D11 variables here (be sure to "Release()" them when done!)
+	// D3D11 resource variables
 	ID3D11Buffer* constantBuffer = nullptr;
 	ID3D11Buffer* vertexBuffer = nullptr;
 	ID3D11Buffer* indexBuffer = nullptr;
@@ -56,13 +53,11 @@ class Graphics
 	ID3D11ShaderResourceView* shaderRV = nullptr;
 	ID3D11SamplerState* sampler = nullptr;
 
-	Vertex* vertices = nullptr;
-	int numVertices = 0;
-	void* indicies = nullptr;
-	int numIndicies = 0;
+	std::vector<Mesh> meshes;
 	ConstantBuffer cb;
 	bool shrink = false;
-	XMVECTOR lightRad = { 1.0f, 0.0f, 0.0f, 0.0f };
+	float radius = 1.0f;
+	Camera camera;
 public:
 	// Init constructor
 	Graphics(GW::SYSTEM::GWindow* attatchPoint);
@@ -74,4 +69,5 @@ public:
 	HRESULT InitializeDevice();
 	void CleanDevice();
 	HRESULT CreateBuffer(ID3D11Device* device,ID3D11Buffer** buffer, UINT bindFlag, UINT byteWidth, const void* pSysMem);
+	void KeyboardHandle();
 };
