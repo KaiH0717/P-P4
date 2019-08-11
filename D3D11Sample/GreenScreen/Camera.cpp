@@ -153,8 +153,8 @@ void Camera::IncreaseFarPlane(float offset)
 void Camera::DecreaseFarPlane(float offset)
 {
 	this->farPlane -= offset;
-	if (this->farPlane < 10.0f)
-		this->farPlane = 10.0f;
+	if (this->farPlane < 2.0f)
+		this->farPlane = 2.0f;
 	SetProjection(this->FOV, this->aspectRatio, this->nearPlane, this->farPlane);
 }
 

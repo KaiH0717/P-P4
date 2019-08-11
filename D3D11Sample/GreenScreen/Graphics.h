@@ -52,13 +52,15 @@ class Graphics
 	ID3D11ShaderResourceView* shaderRV = nullptr;
 	ID3D11SamplerState* sampler = nullptr;
 
-	std::vector<Mesh> meshes;
+	std::vector<Mesh*> meshes;
 	ConstantBuffer cb;
 	bool shrink = false;
 	float radius = 1.0f;
 	Camera camera;
 	Light dLight;
 	Light pLight;
+	Mesh hub;
+
 public:
 	// Init constructor
 	Graphics(GW::SYSTEM::GWindow* attatchPoint);

@@ -28,6 +28,7 @@ private:
 	// speed type
 	XMMATRIX worldMatrix;
 public:
+	Mesh();
 	Mesh(char* name, void* indices, unsigned int vertexCount, unsigned int indexCount);
 	~Mesh();
 
@@ -38,10 +39,13 @@ public:
 	unsigned int GetIndexCount() const;
 	const XMMATRIX GetWorldMatrix() const;
 
-	//void SetName(char* name);
-	//void SetVertices(Vertex* vertices);
-	//void SetIndices(void* indices);
-	//void SetVertexCount(unsigned int vertexCount);
-	//void SetIndexCount(unsigned int indexCount);
+	void SetName(char* name);
+	void SetVertices(Vertex* vertices);
+	void SetIndices(void* indices);
+	void SetVertexCount(unsigned int vertexCount);
+	void SetIndexCount(unsigned int indexCount);
 	void SetWorldMatrix(const XMMATRIX& world);
+
+	void FillVertex(const Vertex* vertexData);
+	
 };

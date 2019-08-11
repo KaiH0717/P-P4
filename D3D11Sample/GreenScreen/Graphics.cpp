@@ -4,9 +4,8 @@
 #include "VertexShader.csh"
 #include "PixelShader.csh"
 #include "../../My assets/StoneHenge.h"
-#include "../../My assets/lionheart.h"
+#include "../../My assets/Artisans_Hub.h"
 #include "DDSTextureLoader.h"
-#include <iostream>
 
 Graphics::Graphics(GW::SYSTEM::GWindow* attatchPoint)
 {
@@ -134,7 +133,7 @@ void Graphics::Render()
 			myContext->PSSetShaderResources(0, 1, &shaderRV);
 			myContext->PSSetSamplers(0, 1, &sampler);
 			// draw
-			myContext->DrawIndexed(meshes[0].GetIndexCount(), 0, 0);
+			myContext->DrawIndexed(meshes[0]->GetIndexCount(), 0, 0);
 
 			// Present Backbuffer using Swapchain object
 			// Framerate is currently unlocked, we suggest "MSI Afterburner" to track your current FPS and memory usage.
@@ -152,7 +151,7 @@ HRESULT Graphics::InitializeDevice()
 	// write and compile & load our shaders
 	hr = myDevice->CreateVertexShader(VertexShader, sizeof(VertexShader), nullptr, &vertexShader);
 	hr = myDevice->CreatePixelShader(PixelShader, sizeof(PixelShader), nullptr, &pixelShader);
-
+	
 	// define input layout
 	D3D11_INPUT_ELEMENT_DESC layout[] =
 	{
@@ -164,50 +163,36 @@ HRESULT Graphics::InitializeDevice()
 	hr = myDevice->CreateInputLayout(layout, ARRAYSIZE(layout), VertexShader, sizeof(VertexShader), &vertexLayout);
 
 	// fill vertices
-	Mesh mesh("StoneHenge", (void*)StoneHenge_indicies, ARRAYSIZE(StoneHenge_data), ARRAYSIZE(StoneHenge_indicies));
-	meshes.push_back(mesh);
-	//Mesh mesh1("Sword", (void*)lionheart_indicies, ARRAYSIZE(lionheart_data), ARRAYSIZE(lionheart_indicies));
-	//meshes.push_back(mesh1);
-	for (size_t i = 0; i < mesh.GetVertexCount(); i++)
+	hub.SetName("ArtisansHub");
+	hub.SetIndexCount(ARRAYSIZE(Artisans_Hub_indicies));
+	hub.SetVertexCount(ARRAYSIZE(Artisans_Hub_data));
+	hub.SetIndices((void*)Artisans_Hub_indicies);
+	hub.SetVertices(new Vertex[hub.GetVertexCount()]);
+	for (size_t i = 0; i < hub.GetVertexCount(); i++)
 	{
-		mesh.GetVertices()[i].position.x = StoneHenge_data[i].pos[0] * 0.1f;
-		mesh.GetVertices()[i].position.y = StoneHenge_data[i].pos[1] * 0.1f;
-		mesh.GetVertices()[i].position.z = StoneHenge_data[i].pos[2] * 0.1f;
-		mesh.GetVertices()[i].position.w = 1.0f;
+		hub.GetVertices()[i].position.x = Artisans_Hub_data[i].pos[0] * 0.1f;
+		hub.GetVertices()[i].position.y = Artisans_Hub_data[i].pos[1] * 0.1f;
+		hub.GetVertices()[i].position.z = Artisans_Hub_data[i].pos[2] * 0.1f;
+		hub.GetVertices()[i].position.w = 1.0f;
 
-		mesh.GetVertices()[i].texture.x = StoneHenge_data[i].uvw[0];
-		mesh.GetVertices()[i].texture.y = StoneHenge_data[i].uvw[1];
+		hub.GetVertices()[i].texture.x = Artisans_Hub_data[i].uvw[0];
+		hub.GetVertices()[i].texture.y = Artisans_Hub_data[i].uvw[1];
 
-		mesh.GetVertices()[i].normal.x = StoneHenge_data[i].nrm[0];
-		mesh.GetVertices()[i].normal.y = StoneHenge_data[i].nrm[1];
-		mesh.GetVertices()[i].normal.z = StoneHenge_data[i].nrm[2];
+		hub.GetVertices()[i].normal.x = Artisans_Hub_data[i].nrm[0];
+		hub.GetVertices()[i].normal.y = Artisans_Hub_data[i].nrm[1];
+		hub.GetVertices()[i].normal.z = Artisans_Hub_data[i].nrm[2];
 
-		mesh.GetVertices()[i].color = { 1.0f, 1.0f, 1.0f, 1.0f };
+		hub.GetVertices()[i].color = { 1.0f, 1.0f, 1.0f, 1.0f };
 	}
-	//for (size_t i = 0; i < mesh1.GetVertexCount(); i++)
-	//{
-	//	mesh1.GetVertices()[i].position.x = lionheart_data[i].pos[0] * 0.1f;
-	//	mesh1.GetVertices()[i].position.y = lionheart_data[i].pos[1] * 0.1f;
-	//	mesh1.GetVertices()[i].position.z = lionheart_data[i].pos[2] * 0.1f;
-	//	mesh1.GetVertices()[i].position.w = 1.0f;
-
-	//	mesh1.GetVertices()[i].texture.x = lionheart_data[i].uvw[0];
-	//	mesh1.GetVertices()[i].texture.y = lionheart_data[i].uvw[1];
-
-	//	mesh1.GetVertices()[i].normal.x = lionheart_data[i].nrm[0];
-	//	mesh1.GetVertices()[i].normal.y = lionheart_data[i].nrm[1];
-	//	mesh1.GetVertices()[i].normal.z = lionheart_data[i].nrm[2];
-
-	//	mesh1.GetVertices()[i].color = { 1.0f, 1.0f, 1.0f, 1.0f };
-	//}
+	meshes.push_back(&hub);
 	// describe vertex data and create vertex buffer
-	hr = CreateBuffer(myDevice, &vertexBuffer, D3D11_BIND_VERTEX_BUFFER, sizeof(Vertex) * mesh.GetVertexCount(), mesh.GetVertices());
+	hr = CreateBuffer(myDevice, &vertexBuffer, D3D11_BIND_VERTEX_BUFFER, sizeof(Vertex) * hub.GetVertexCount(), hub.GetVertices());
 	// describe index data and create index buffer
-	hr = CreateBuffer(myDevice, &indexBuffer, D3D11_BIND_INDEX_BUFFER, sizeof(unsigned int) * mesh.GetIndexCount(), mesh.GetIndices());
+	hr = CreateBuffer(myDevice, &indexBuffer, D3D11_BIND_INDEX_BUFFER, sizeof(unsigned int) * hub.GetIndexCount(), hub.GetIndices());
 	// describe constant variables and create constant buffer
 	hr = CreateBuffer(myDevice, &constantBuffer, D3D11_BIND_CONSTANT_BUFFER, sizeof(ConstantBuffer), nullptr);
 	// load texture
-	hr = CreateDDSTextureFromFile(myDevice, L"../../My assets/StoneHenge.dds", nullptr, &shaderRV);
+	hr = CreateDDSTextureFromFile(myDevice, L"../../My assets/Textures/High.dds", nullptr, &shaderRV);
 	// create sample
 	D3D11_SAMPLER_DESC sampDesc;
 	ZeroMemory(&sampDesc, sizeof(D3D11_SAMPLER_DESC));
@@ -282,7 +267,7 @@ HRESULT Graphics::CreateBuffer(ID3D11Device* device, ID3D11Buffer** buffer, UINT
 
 void Graphics::KeyboardHandle()
 {
-	float offset = 0.01f;
+	float offset = 0.025f;
 	// move forward
 	if (GetAsyncKeyState('W'))
 	{
