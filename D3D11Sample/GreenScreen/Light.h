@@ -34,4 +34,7 @@ public:
 	void SetColor(const XMVECTOR& color);
 	void SetColor(float r, float g, float b, float a);
 	void SetWorldMatrix(const XMMATRIX& world);
+
+	void UpdatePositionVector();
+	void UpdateNormalVector();
 };

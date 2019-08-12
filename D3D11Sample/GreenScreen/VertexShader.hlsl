@@ -40,7 +40,7 @@ OutputVertex main(InputVertex input)
     float4 color1 = lerp(float4(0.0f, 0.0f, 0.0f, 1.0f), lightColor[0], ratio);
     // point lighting
     float3 pointLightDir = normalize(lightPos[1] - output.position);
-    float pointLightRatio = saturate(dot(pointLightDir, output.normal));
+    float pointLightRatio = saturate(dot(pointLightDir, output.normal) + 0.25f);
     float attenuation = 1.0f - saturate((length(lightPos[1] - output.position) / lightRadius.x));
     pointLightRatio = attenuation * attenuation * pointLightRatio;
     float4 color2 = lerp(float4(0.0f, 0.0f, 0.0f, 1.0f), lightColor[1], pointLightRatio);

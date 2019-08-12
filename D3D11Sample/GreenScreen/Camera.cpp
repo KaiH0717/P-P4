@@ -127,12 +127,16 @@ void Camera::IncreaseFOV(float offset)
 void Camera::DecreaseFOV(float offset)
 {
 	this->FOV -= offset;
+	if (this->FOV < 45.0f)
+		this->FOV = 45.0f;
 	SetProjection(this->FOV, this->aspectRatio, this->nearPlane, this->farPlane);
 }
 
 void Camera::IncreaseNearPlane(float offset)
 {
 	this->nearPlane += offset;
+	if (this->FOV > 135.0f)
+		this->FOV = 135.0f;
 	SetProjection(this->FOV, this->aspectRatio, this->nearPlane, this->farPlane);
 }
 
@@ -160,15 +164,15 @@ void Camera::DecreaseFarPlane(float offset)
 
 void Camera::UpdateView()
 {
-	//Calculate camera rotation matrix
-	XMMATRIX camRotationMatrix = XMMatrixRotationRollPitchYaw(this->rotation.x, this->rotation.y, this->rotation.z);
-	//Calculate unit vector of cam target based off camera forward value transformed by cam rotation matrix
-	XMVECTOR camTarget = XMVector3TransformCoord(XMVectorSet(0.0f, 0.0f, 1.0f, 0.0f), camRotationMatrix);
-	//Adjust cam target to be offset by the camera's current position
-	camTarget += this->positionVector;
-	//Calculate up direction based on current rotation
-	XMVECTOR upDir = XMVector3TransformCoord(XMVectorSet(0.0f, 1.0f, 0.0f, 0.0f), camRotationMatrix);
-	//Rebuild view matrix
-	this->viewMatrix = XMMatrixLookAtLH(this->positionVector, camTarget, upDir);
+	// calculate camera rotation
+	XMMATRIX rotation = XMMatrixRotationRollPitchYaw(this->rotation.x, this->rotation.y, this->rotation.z);
+	// calculate unit vector of cam target based off camera forward value transformed by cam rotation matrix
+	XMVECTOR target = XMVector3TransformCoord(XMVectorSet(0.0f, 0.0f, 1.0f, 0.0f), rotation);
+	// adjust cam target to be offset by the camera's current position
+	target += this->positionVector;
+	// calculate up direction based on current rotation
+	XMVECTOR up = XMVector3TransformCoord(XMVectorSet(0.0f, 1.0f, 0.0f, 0.0f), rotation);
+	// rebuild view matrix
+	this->viewMatrix = XMMatrixLookAtLH(this->positionVector, target, up);
 	XMStoreFloat4x4(&this->view, this->viewMatrix);
 }

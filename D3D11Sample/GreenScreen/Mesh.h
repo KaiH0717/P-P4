@@ -32,12 +32,12 @@ public:
 	Mesh(char* name, void* indices, unsigned int vertexCount, unsigned int indexCount);
 	~Mesh();
 
-	char* GetName() const;
+	const char* GetName() const;
 	Vertex* GetVertices() const;
-	void* GetIndices() const;
-	unsigned int GetVertexCount() const;
-	unsigned int GetIndexCount() const;
-	const XMMATRIX GetWorldMatrix() const;
+	const void* GetIndices() const;
+	const unsigned int& GetVertexCount() const;
+	const unsigned int& GetIndexCount() const;
+	const XMMATRIX& GetWorldMatrix() const;
 
 	void SetName(char* name);
 	void SetVertices(Vertex* vertices);
@@ -45,7 +45,4 @@ public:
 	void SetVertexCount(unsigned int vertexCount);
 	void SetIndexCount(unsigned int indexCount);
 	void SetWorldMatrix(const XMMATRIX& world);
-
-	void FillVertex(const Vertex* vertexData);
-	
 };

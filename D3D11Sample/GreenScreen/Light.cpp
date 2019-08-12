@@ -77,3 +77,16 @@ void Light::SetWorldMatrix(const XMMATRIX& world)
 	this->worldMatrix = world;
 	XMStoreFloat4x4(&this->world, this->worldMatrix);
 }
+
+void Light::UpdatePositionVector()
+{
+	positionVector = XMVector4Transform(positionVector, worldMatrix);
+	XMStoreFloat4(&position, positionVector);
+}
+
+void Light::UpdateNormalVector()
+{
+	normalVector = XMVector4Transform(normalVector, worldMatrix);
+	XMStoreFloat4(&normal, normalVector);
+}
+
