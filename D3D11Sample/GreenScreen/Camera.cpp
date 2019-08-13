@@ -7,61 +7,27 @@ Camera::Camera()
 	nearPlane = 0.1f;
 	farPlane = 10.0f;
 
-	position = XMFLOAT3(0.0f, 0.0f, 0.0f);
-	positionVector = XMLoadFloat3(&position);
-	rotation = XMFLOAT3(0.0f, 0.0f, 0.0f);
-	rotationVector = XMLoadFloat3(&rotation);
-
-	viewMatrix = XMMatrixIdentity();
+	viewMatrix = XMMatrixLookAtLH(XMVectorSet(0.0f, 0.0f, -1.0f, 0.0f), XMVectorSet(0.0f, 0.0f, 1.0f, 0.0f), XMVectorSet(0.0f, 1.0f, 0.0f, 0.0f));
 	XMStoreFloat4x4(&view, viewMatrix);
+	worldViewMatrix = XMMatrixInverse(nullptr, viewMatrix);
+	XMStoreFloat4x4(&worldView, worldViewMatrix);
+
 	projectionMatrix = XMMatrixIdentity();
 	XMStoreFloat4x4(&projection, projectionMatrix);
-	UpdateView();
-}
-
-Camera::~Camera()
-{
-}
-
-void Camera::Reset()
-{
-	this->SetPosition(0.0f, 0.0f, -1.0f);
-	this->Rotate(0.0f, 0.0f, 0.0f);
 }
 
 float Camera::GetFOV() const { return FOV; }
 float Camera::GetAspectRatio() const { return aspectRatio; }
 float Camera::GetNearPlane() const { return nearPlane; }
 float Camera::GetFarPlane() const { return farPlane; }
+const XMMATRIX Camera::GetWorldViewMatrix() const { return XMLoadFloat4x4(&worldView); }
 const XMMATRIX Camera::GetViewMatrix() const { return XMLoadFloat4x4(&view); }
 const XMMATRIX Camera::GetProjectionMatrix() const { return XMLoadFloat4x4(&projection); }
-const XMVECTOR Camera::GetPositionVector() const { return XMLoadFloat3(&position); }
-const XMVECTOR Camera::GetRotationVector() const { return XMLoadFloat3(&rotation); }
 
-void Camera::SetFOV(float fov)
-{
-	this->FOV = fov;
-	SetProjection(this->FOV, this->aspectRatio, this->nearPlane, this->farPlane);
-}
-
-void Camera::SetAspectRatio(float aspectRatio)
-{
-	this->aspectRatio = aspectRatio + 0.001f;
-	SetProjection(this->FOV, this->aspectRatio, this->nearPlane, this->farPlane);
-}
-
-void Camera::SetNearPlane(float nearPlane)
-{
-	this->nearPlane = nearPlane;
-	SetProjection(this->FOV, this->aspectRatio, this->nearPlane, this->farPlane);
-}
-
-void Camera::SetFarPlane(float farPlane)
-{
-	this->farPlane = farPlane;
-	SetProjection(this->FOV, this->aspectRatio, this->nearPlane, this->farPlane);
-}
-
+void Camera::SetFOV(float fov) { this->FOV = fov; SetProjection(this->FOV, this->aspectRatio, this->nearPlane, this->farPlane); }
+void Camera::SetAspectRatio(float aspectRatio) { this->aspectRatio = aspectRatio + 0.0001f; SetProjection(this->FOV, this->aspectRatio, this->nearPlane, this->farPlane); }
+void Camera::SetNearPlane(float nearPlane) { this->nearPlane = nearPlane; SetProjection(this->FOV, this->aspectRatio, this->nearPlane, this->farPlane); }
+void Camera::SetFarPlane(float farPlane) { this->farPlane = farPlane; SetProjection(this->FOV, this->aspectRatio, this->nearPlane, this->farPlane); }
 void Camera::SetProjection(float FOV, float aspectRatio, float nearPlane, float farPlane)
 {
 	this->FOV = FOV;
@@ -72,50 +38,12 @@ void Camera::SetProjection(float FOV, float aspectRatio, float nearPlane, float 
 	XMStoreFloat4x4(&projection, projectionMatrix);
 }
 
-void Camera::SetPosition(const XMVECTOR& position)
-{
-	this->positionVector = position;
-	XMStoreFloat3(&this->position, this->positionVector);
-	UpdateView();
-}
-
 void Camera::SetPosition(float x, float y, float z)
 {
-	this->position = XMFLOAT3(x, y, z);
-	this->positionVector = XMLoadFloat3(&this->position);
-	UpdateView();
-}
-
-void Camera::Move(const XMVECTOR& position)
-{
-	this->positionVector += position;
-	XMStoreFloat3(&this->position, this->positionVector);
-	UpdateView();
-}
-
-void Camera::Move(float x, float y, float z)
-{
-	this->position.x += x;
-	this->position.y += y;
-	this->position.z += z;
-	this->positionVector = XMLoadFloat3(&this->position);
-	UpdateView();
-}
-
-void Camera::Rotate(const XMVECTOR& rotation)
-{
-	this->rotationVector += rotation;
-	XMStoreFloat3(&this->rotation, this->rotationVector);
-	UpdateView();
-}
-
-void Camera::Rotate(float x, float y, float z)
-{
-	this->rotation.x += x;
-	this->rotation.y += y;
-	this->rotation.z += z;
-	this->rotationVector = XMLoadFloat3(&this->rotation);
-	UpdateView();
+	viewMatrix = XMMatrixLookAtLH(XMVectorSet(x, y, z, 0.0f), XMVectorSet(0.0f, 0.0f, 1.0f, 0.0f), XMVectorSet(0.0f, 1.0f, 0.0f, 0.0f));
+	XMStoreFloat4x4(&view, viewMatrix);
+	worldViewMatrix = XMMatrixInverse(nullptr, viewMatrix);
+	XMStoreFloat4x4(&worldView, worldViewMatrix);
 }
 
 void Camera::IncreaseFOV(float offset)
@@ -129,8 +57,8 @@ void Camera::IncreaseFOV(float offset)
 void Camera::DecreaseFOV(float offset)
 {
 	this->FOV -= offset;
-	if (this->FOV <= 90.0f)
-		this->FOV = 90.0f;
+	if (this->FOV <= 45.0f)
+		this->FOV = 45.0f;
 	SetProjection(this->FOV, this->aspectRatio, this->nearPlane, this->farPlane);
 }
 
@@ -164,20 +92,50 @@ void Camera::DecreaseFarPlane(float offset)
 
 void Camera::UpdateView()
 {
-	// inverting view matrix to put it in world matrix
-	// TODO: update view while moving
+	viewMatrix = XMMatrixInverse(nullptr, worldViewMatrix);
+	XMStoreFloat4x4(&view, viewMatrix);
+}
 
+void Camera::MoveX(float offset)
+{
+	XMMATRIX translation = XMMatrixTranslation(offset, 0.0f, 0.0f);
+	worldViewMatrix = XMMatrixMultiply(translation, worldViewMatrix);
+	XMStoreFloat4x4(&worldView, worldViewMatrix);
+}
 
-	// calculate camera rotation
-	XMMATRIX rotation = XMMatrixRotationRollPitchYaw(this->rotation.x, this->rotation.y, this->rotation.z);
-	// calculate target based off camera forward value transformed by cam rotation matrix
-	XMVECTOR target = XMVector3TransformCoord(XMVectorSet(0.0f, 0.0f, 1.0f, 0.0f), rotation);
-	// adjust target to be offset by the camera's current position
-	target += this->positionVector;
-	//this->positionVector = XMVector3TransformCoord(this->positionVector, rotation);
-	// calculate up direction based on current rotation
-	XMVECTOR up = XMVector3TransformCoord(XMVectorSet(0.0f, 1.0f, 0.0f, 0.0f), rotation);
-	// rebuild view matrix
-	this->viewMatrix = XMMatrixLookAtLH(this->positionVector, target, up);
-	XMStoreFloat4x4(&this->view, this->viewMatrix);
+void Camera::MoveY(float offset)
+{
+	XMMATRIX translation = XMMatrixTranslation(0.0f, offset, 0.0f);
+	worldViewMatrix = XMMatrixMultiply(worldViewMatrix, translation);
+	XMStoreFloat4x4(&worldView, worldViewMatrix);
+}
+
+void Camera::MoveZ(float offset)
+{
+	XMMATRIX translation = XMMatrixTranslation(0.0f, 0.0f, offset);
+	worldViewMatrix = XMMatrixMultiply(translation, worldViewMatrix);
+	XMStoreFloat4x4(&worldView, worldViewMatrix);
+}
+
+void Camera::Pitch(float degrees)
+{
+	// local rotation
+	XMMATRIX rotation = XMMatrixRotationX(degrees);
+	worldViewMatrix = XMMatrixMultiply(rotation, worldViewMatrix);
+	XMStoreFloat4x4(&worldView, worldViewMatrix);
+}
+
+void Camera::Yaw(float degrees)
+{
+	// global rotation
+	XMMATRIX rotation = XMMatrixRotationY(degrees);
+	XMVECTOR originalPos = worldViewMatrix.r[3];
+	worldViewMatrix.r[3] = XMVectorSet(0.0f, 0.0f, 0.0f, 1.0f);
+	worldViewMatrix = XMMatrixMultiply(worldViewMatrix, rotation);
+	XMStoreFloat4x4(&worldView, worldViewMatrix);
+	worldViewMatrix.r[3] = originalPos;
+}
+
+void Camera::Roll(float degrees)
+{
 }

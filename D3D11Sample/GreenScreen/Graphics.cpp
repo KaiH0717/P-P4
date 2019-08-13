@@ -119,6 +119,7 @@ void Graphics::Render()
 			temp = XMMatrixTranslation(0.0f, 0.0f, 0.5f);
 			XMStoreFloat4x4(&cb.world, temp);
 			// view
+			
 			XMStoreFloat4x4(&cb.view, camera.GetViewMatrix());
 			// projection
 			float ar = 0.0f;
@@ -268,78 +269,68 @@ HRESULT Graphics::CreateBuffer(ID3D11Device* device, ID3D11Buffer** buffer, UINT
 	}
 }
 
-void Graphics::KeyboardHandle()
+void Graphics::KeyboardHandle(float delta)
 {
 	float offset = 0.025f;
 	// move forward
 	if (GetAsyncKeyState('W'))
 	{
-		camera.Move(0.0f, 0.0f, offset);
+		camera.MoveZ(offset * 2.0f);
 	}
 	// move left
 	if (GetAsyncKeyState('A'))
 	{
-		camera.Move(-offset, 0.0f, 0.0f);
+		camera.MoveX(-offset * 2.0f);
 	}
 	// move backwards
 	if (GetAsyncKeyState('S'))
 	{
-		camera.Move(0.0f, 0.0f, -offset);
+		camera.MoveZ(-offset * 2.0f);
 	}
 	// move right
 	if (GetAsyncKeyState('D'))
 	{
-		camera.Move(offset, 0.0f, 0.0f);
+		camera.MoveX(offset * 2.0f);
 	}
 	// move up
 	if (GetAsyncKeyState('Q'))
 	{
-		camera.Move(0.0f, offset, 0.0f);
+		camera.MoveY(offset * 2.0f);
 	}
 	// move down
 	if (GetAsyncKeyState('E'))
 	{
-		camera.Move(0.0f, -offset, 0.0f);
+		camera.MoveY(-offset * 2.0f);
 	}
 	// yaw left
 	if (GetAsyncKeyState('J'))
 	{
-		camera.Rotate(0.0f, -offset, 0.0f);
+		camera.Yaw(-offset * 2.0f);
 	}
 	// yaw right
 	if (GetAsyncKeyState('L'))
 	{
-		camera.Rotate(0.0f, offset, 0.0f);
+		camera.Yaw(offset * 2.0f);
 	}
 	// pitch up
 	if (GetAsyncKeyState('I'))
 	{
-		camera.Rotate(-offset, 0.0f, 0.0f);
+		camera.Pitch(-offset * 2.0f);
 	}
 	// pitch down
 	if (GetAsyncKeyState('K'))
 	{
-		camera.Rotate(offset, 0.0f, 0.0f);
-	}
-	// roll left
-	if (GetAsyncKeyState('U'))
-	{
-		camera.Rotate(0.0f, 0.0f, offset);
-	}
-	// roll right
-	if (GetAsyncKeyState('O'))
-	{
-		camera.Rotate(0.0f, 0.0f, -offset);
+		camera.Pitch(offset * 2.0f);
 	}
 	// increase fov
 	if (GetAsyncKeyState('1'))
 	{
-		camera.IncreaseFOV(offset * 10.0f);
+		camera.IncreaseFOV(offset * 25.0f);
 	}
 	// decrease fov
 	if (GetAsyncKeyState('2'))
 	{
-		camera.DecreaseFOV(offset * 10.0f);
+		camera.DecreaseFOV(offset * 25.0f);
 	}
 	// increase near plane
 	if (GetAsyncKeyState('3'))
@@ -361,4 +352,5 @@ void Graphics::KeyboardHandle()
 	{
 		camera.DecreaseFarPlane(offset * 5.0f);
 	}
+	camera.UpdateView();
 }

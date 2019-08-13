@@ -34,7 +34,7 @@ OutputVertex main(InputVertex input)
     output.position = input.position;
     output.position = mul(output.position, world);
 	output.normal = input.normal;
-    output.normal = mul(float4(input.normal, 1), world).xyz;
+    output.normal = mul(float4(output.normal, 1), world).xyz;
 
     // directional lighting
     float ratio = saturate(dot((float3) lightNor[0], output.normal) + 0.25f);

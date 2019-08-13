@@ -75,5 +75,5 @@ public:
 	HRESULT InitializeDevice();
 	void CleanDevice();
 	HRESULT CreateBuffer(ID3D11Device* device,ID3D11Buffer** buffer, UINT bindFlag, UINT byteWidth, const void* pSysMem);
-	void KeyboardHandle();
+	void KeyboardHandle(float delta);
 };
