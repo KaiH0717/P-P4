@@ -61,7 +61,9 @@ class Graphics
 	Light dLight;
 	Light pLight;
 	Mesh hub;
-
+	// model class
+	// vertex, index buffer
+	// shader, texture
 public:
 	// Init constructor
 	Graphics(GW::SYSTEM::GWindow* attatchPoint);

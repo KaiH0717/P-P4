@@ -83,7 +83,6 @@ void Graphics::Render()
 			myContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 			myContext->VSSetShader(vertexShader, nullptr, 0);
 			myContext->PSSetShader(pixelShader, nullptr, 0);
-			myContext->OMSetRenderTargets(1, &myRenderTargetView, nullptr);
 
 			// lighting
 			static float rot = 0.0f; rot += 0.01f;
@@ -125,7 +124,6 @@ void Graphics::Render()
 			float ar = 0.0f;
 			mySurface->GetAspectRatio(ar);
 			camera.SetAspectRatio(ar);
-			//camera.SetProjection(camera.GetFOV(), ar, camera.GetNearPlane(), camera);
 			XMStoreFloat4x4(&cb.projection, camera.GetProjectionMatrix());
 			// map constant buffer
 			D3D11_MAPPED_SUBRESOURCE gpuBuffer;
