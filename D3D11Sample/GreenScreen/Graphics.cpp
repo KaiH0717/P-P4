@@ -72,7 +72,7 @@ void Graphics::Render()
 			myContext->ClearRenderTargetView(myRenderTargetView, bg_Color);
 
 			// keyboard inputs
-			KeyboardHandle();
+			KeyboardHandle(0.0f);
 
 			// setup pipeline
 			UINT strides = sizeof(Vertex);
