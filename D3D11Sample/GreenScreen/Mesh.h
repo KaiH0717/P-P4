@@ -28,6 +28,9 @@ private:
 	// speed type
 	XMMATRIX worldMatrix;
 public:
+	ID3D11Buffer* vertexBuffer;
+	ID3D11Buffer* indexBuffer;
+public:
 	Mesh();
 	Mesh(char* name, void* indices, unsigned int vertexCount, unsigned int indexCount);
 	~Mesh();

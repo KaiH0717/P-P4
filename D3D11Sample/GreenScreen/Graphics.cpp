@@ -24,7 +24,9 @@ Graphics::Graphics(GW::SYSTEM::GWindow* attatchPoint)
 			camera.SetPosition(0.0f, 2.0f, -5.0f);
 			camera.SetProjection(90.0f, 1.0f, 0.1f, 20.0f);
 			pLight.SetPosition(-1.0f, 0.5f, 1.0f);
-
+			pLight.SetNormal(0.0f, 0.0f, 0.0f);
+			dLight.SetPosition(0.0f, 0.0f, 0.0f);
+			dLight.SetNormal(0.577f, 0.577f, -0.577f);
 		}
 	}
 }
@@ -84,10 +86,11 @@ void Graphics::Render()
 			myContext->OMSetRenderTargets(1, &myRenderTargetView, nullptr);
 
 			// lighting
-			static float rot = 0.0f; rot += 0.0001f;
+			static float rot = 0.0f; rot += 0.01f;
 			// directional lighting
-			dLight.SetPosition(0.0f, 0.0f, 0.0f);
-			dLight.SetNormal(0.577f, 0.577f, -0.577f);
+			dLight.SetWorldMatrix(XMMatrixRotationY(0.01f));
+			dLight.UpdatePositionVector();
+			dLight.UpdateNormalVector();
 			dLight.SetColor(0.75f, 0.75f, 0.94f, 1.0f);
 			XMStoreFloat4(&cb.lightPos[0], dLight.GetPositionVector());
 			XMStoreFloat4(&cb.lightNormal[0], dLight.GetNormalVectorNormalized());
@@ -96,7 +99,6 @@ void Graphics::Render()
 			pLight.SetWorldMatrix(XMMatrixRotationY(0.01f));
 			pLight.UpdatePositionVector();
 			pLight.UpdateNormalVector();
-			pLight.SetNormal(0.0f, 0.0f, 0.0f);
 			pLight.SetColor(1.0f, 0.0f, 0.0f, 1.0f);
 			XMStoreFloat4(&cb.lightPos[1], pLight.GetPositionVector());
 			XMStoreFloat4(&cb.lightNormal[1], pLight.GetNormalVectorNormalized());
@@ -110,7 +112,7 @@ void Graphics::Render()
 				radius -= 0.03f;
 			else
 				radius += 0.03f;
-			XMVECTOR lightRad = { radius, 0.0f, 0.0f, 0.0f };
+			XMVECTOR lightRad = { radius, rot, 0.0f, 0.0f };
 			XMStoreFloat4(&cb.lightRadius, lightRad);
 
 			// world

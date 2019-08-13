@@ -22,5 +22,8 @@ cbuffer ConstantBuffer : register(b0)
 
 float4 main(OutputVertex inputPixel) : SV_TARGET
 {
+    //inputPixel.color.x = saturate(inputPixel.color.x + cos(lightRadius.y));
+    //inputPixel.color.y = saturate(inputPixel.color.y + sin(lightRadius.y));
+    //inputPixel.color.z = saturate(inputPixel.color.z + tan(lightRadius.y));
     return inputPixel.color * txDiffuse.Sample(samLinear, inputPixel.tex);
 }

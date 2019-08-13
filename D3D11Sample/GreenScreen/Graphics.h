@@ -56,6 +56,7 @@ class Graphics
 	ConstantBuffer cb;
 	bool shrink = false;
 	float radius = 1.0f;
+	float PS_Unique = 0.0f;
 	Camera camera;
 	Light dLight;
 	Light pLight;

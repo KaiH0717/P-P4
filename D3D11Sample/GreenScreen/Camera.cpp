@@ -46,7 +46,7 @@ void Camera::SetFOV(float fov)
 
 void Camera::SetAspectRatio(float aspectRatio)
 {
-	this->aspectRatio = aspectRatio;
+	this->aspectRatio = aspectRatio + 0.001f;
 	SetProjection(this->FOV, this->aspectRatio, this->nearPlane, this->farPlane);
 }
 
@@ -65,7 +65,7 @@ void Camera::SetFarPlane(float farPlane)
 void Camera::SetProjection(float FOV, float aspectRatio, float nearPlane, float farPlane)
 {
 	this->FOV = FOV;
-	this->aspectRatio = aspectRatio;
+	this->aspectRatio = aspectRatio + 0.0001f;
 	this->nearPlane = nearPlane;
 	this->farPlane = farPlane;
 	projectionMatrix = XMMatrixPerspectiveFovLH(XMConvertToRadians(this->FOV), this->aspectRatio, this->nearPlane, this->farPlane);
@@ -121,6 +121,8 @@ void Camera::Rotate(float x, float y, float z)
 void Camera::IncreaseFOV(float offset)
 {
 	this->FOV += offset;
+	if (this->FOV > 135.0f)
+		this->FOV = 135.0f;
 	SetProjection(this->FOV, this->aspectRatio, this->nearPlane, this->farPlane);
 }
 
@@ -135,8 +137,6 @@ void Camera::DecreaseFOV(float offset)
 void Camera::IncreaseNearPlane(float offset)
 {
 	this->nearPlane += offset;
-	if (this->FOV > 135.0f)
-		this->FOV = 135.0f;
 	SetProjection(this->FOV, this->aspectRatio, this->nearPlane, this->farPlane);
 }
 
@@ -164,10 +164,14 @@ void Camera::DecreaseFarPlane(float offset)
 
 void Camera::UpdateView()
 {
+	// TODO: update view while moving
+
+
 	// calculate camera rotation
 	XMMATRIX rotation = XMMatrixRotationRollPitchYaw(this->rotation.x, this->rotation.y, this->rotation.z);
 	// calculate unit vector of cam target based off camera forward value transformed by cam rotation matrix
 	XMVECTOR target = XMVector3TransformCoord(XMVectorSet(0.0f, 0.0f, 1.0f, 0.0f), rotation);
+	target = XMVector3Normalize(target);
 	// adjust cam target to be offset by the camera's current position
 	target += this->positionVector;
 	// calculate up direction based on current rotation
