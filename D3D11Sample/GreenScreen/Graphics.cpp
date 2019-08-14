@@ -27,6 +27,9 @@ Graphics::Graphics(GW::SYSTEM::GWindow* attatchPoint)
 			pLight.SetNormal(0.0f, 0.0f, 0.0f);
 			dLight.SetPosition(0.0f, 0.0f, 0.0f);
 			dLight.SetNormal(0.577f, 0.577f, -0.577f);
+			time.Restart();
+			elapsedTime = 0;
+			wave = false;
 		}
 	}
 }
@@ -72,7 +75,9 @@ void Graphics::Render()
 			myContext->ClearRenderTargetView(myRenderTargetView, bg_Color);
 
 			// keyboard inputs
-			KeyboardHandle(0.0f);
+			time.Signal();
+			elapsedTime += time.Delta();
+			KeyboardHandle((float)time.SmoothDelta());
 
 			// setup pipeline
 			UINT strides = sizeof(Vertex);
@@ -85,7 +90,7 @@ void Graphics::Render()
 			myContext->PSSetShader(pixelShader, nullptr, 0);
 
 			// lighting
-			static float rot = 0.0f; rot += 0.01f;
+			static float rot = 0.0f; rot += 0.1f;
 			// directional lighting
 			dLight.SetWorldMatrix(XMMatrixRotationY(0.01f));
 			dLight.UpdatePositionVector();
@@ -111,7 +116,7 @@ void Graphics::Render()
 				radius -= 0.03f;
 			else
 				radius += 0.03f;
-			XMVECTOR lightRad = { radius, rot, 0.0f, 0.0f };
+			XMVECTOR lightRad = { radius, rot, (float)elapsedTime, (float)wave };
 			XMStoreFloat4(&cb.lightRadius, lightRad);
 
 			// world
@@ -119,7 +124,7 @@ void Graphics::Render()
 			temp = XMMatrixTranslation(0.0f, 0.0f, 0.5f);
 			XMStoreFloat4x4(&cb.world, temp);
 			// view
-			
+
 			XMStoreFloat4x4(&cb.view, camera.GetViewMatrix());
 			// projection
 			float ar = 0.0f;
@@ -155,7 +160,7 @@ HRESULT Graphics::InitializeDevice()
 	// write and compile & load our shaders
 	hr = myDevice->CreateVertexShader(VertexShader, sizeof(VertexShader), nullptr, &vertexShader);
 	hr = myDevice->CreatePixelShader(PixelShader, sizeof(PixelShader), nullptr, &pixelShader);
-	
+
 	// define input layout
 	D3D11_INPUT_ELEMENT_DESC layout[] =
 	{
@@ -271,86 +276,89 @@ HRESULT Graphics::CreateBuffer(ID3D11Device* device, ID3D11Buffer** buffer, UINT
 
 void Graphics::KeyboardHandle(float delta)
 {
-	float offset = 0.025f;
+	float offset = 3.5f;
 	// move forward
 	if (GetAsyncKeyState('W'))
 	{
-		camera.MoveZ(offset * 2.0f);
+		camera.MoveZ(offset * delta);
 	}
 	// move left
 	if (GetAsyncKeyState('A'))
 	{
-		camera.MoveX(-offset * 2.0f);
+		camera.MoveX(-offset * delta);
 	}
 	// move backwards
 	if (GetAsyncKeyState('S'))
 	{
-		camera.MoveZ(-offset * 2.0f);
+		camera.MoveZ(-offset * delta);
 	}
 	// move right
 	if (GetAsyncKeyState('D'))
 	{
-		camera.MoveX(offset * 2.0f);
+		camera.MoveX(offset * delta);
 	}
 	// move up
 	if (GetAsyncKeyState('Q'))
 	{
-		camera.MoveY(offset * 2.0f);
+		camera.MoveY(offset * delta);
 	}
 	// move down
 	if (GetAsyncKeyState('E'))
 	{
-		camera.MoveY(-offset * 2.0f);
+		camera.MoveY(-offset * delta);
 	}
 	// yaw left
 	if (GetAsyncKeyState('J'))
 	{
-		camera.Yaw(-offset * 2.0f);
+		camera.Yaw(-offset * delta);
 	}
 	// yaw right
 	if (GetAsyncKeyState('L'))
 	{
-		camera.Yaw(offset * 2.0f);
+		camera.Yaw(offset * delta);
 	}
 	// pitch up
 	if (GetAsyncKeyState('I'))
 	{
-		camera.Pitch(-offset * 2.0f);
+		camera.Pitch(-offset * delta);
 	}
 	// pitch down
 	if (GetAsyncKeyState('K'))
 	{
-		camera.Pitch(offset * 2.0f);
+		camera.Pitch(offset * delta);
 	}
 	// increase fov
 	if (GetAsyncKeyState('1'))
 	{
-		camera.IncreaseFOV(offset * 25.0f);
+		camera.IncreaseFOV((offset + 25.0f) * delta);
 	}
 	// decrease fov
 	if (GetAsyncKeyState('2'))
 	{
-		camera.DecreaseFOV(offset * 25.0f);
+		camera.DecreaseFOV((offset + 25.0f) * delta);
 	}
 	// increase near plane
 	if (GetAsyncKeyState('3'))
 	{
-		camera.IncreaseNearPlane(offset * 5.0f);
+		camera.IncreaseNearPlane((offset + 10.0f) * delta);
 	}
 	// decrease near plane
 	if (GetAsyncKeyState('4'))
 	{
-		camera.DecreaseNearPlane(offset * 5.0f);
+		camera.DecreaseNearPlane((offset + 10.0f) * delta);
 	}
 	// increase far plane
 	if (GetAsyncKeyState('5'))
 	{
-		camera.IncreaseFarPlane(offset * 5.0f);
+		camera.IncreaseFarPlane((offset + 10.0f) * delta);
 	}
 	// decrease far plane
 	if (GetAsyncKeyState('6'))
 	{
-		camera.DecreaseFarPlane(offset * 5.0f);
+		camera.DecreaseFarPlane((offset + 10.0f) * delta);
 	}
+	// waviness
+	if (GetAsyncKeyState('F') & 0x1)
+		wave = !wave;
 	camera.UpdateView();
 }

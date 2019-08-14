@@ -35,7 +35,8 @@ OutputVertex main(InputVertex input)
     output.position = mul(output.position, world);
 	output.normal = input.normal;
     output.normal = mul(float4(output.normal, 1), world).xyz;
-
+    output.position.x += sin(output.position.y * 0.1f + lightRadius.z) * lightRadius.w;
+    output.position.y += cos(output.position.x * 0.1f + lightRadius.z) * lightRadius.w;
     // directional lighting
     float ratio = saturate(dot((float3) lightNor[0], output.normal) + 0.25f);
     float4 color1 = lerp(float4(0.0f, 0.0f, 0.0f, 1.0f), lightColor[0], ratio);

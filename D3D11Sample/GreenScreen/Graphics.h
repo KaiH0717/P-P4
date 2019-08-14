@@ -18,6 +18,7 @@
 #include "Mesh.h"
 #include "Light.h"
 #include <vector>
+#include "XTime.h"
 
 struct ConstantBuffer
 {
@@ -64,6 +65,9 @@ class Graphics
 	// model class
 	// vertex, index buffer
 	// shader, texture
+	XTime time;
+	double elapsedTime;
+	bool wave;
 public:
 	// Init constructor
 	Graphics(GW::SYSTEM::GWindow* attatchPoint);

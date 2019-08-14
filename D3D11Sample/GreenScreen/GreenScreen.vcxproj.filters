@@ -18,6 +18,9 @@
     <Filter Include="Texture">
       <UniqueIdentifier>{b1064afd-587a-49bd-9ce2-cca10b7fcf3d}</UniqueIdentifier>
     </Filter>
+    <Filter Include="Time">
+      <UniqueIdentifier>{f1cfdd56-9d41-4f40-a737-96b3fddcb373}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Graphics.h">
@@ -34,6 +37,9 @@
     </ClInclude>
     <ClInclude Include="Light.h">
       <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="XTime.h">
+      <Filter>Time</Filter>
     </ClInclude>
   </ItemGroup>
   <ItemGroup>
@@ -60,6 +66,9 @@
     </ClCompile>
     <ClCompile Include="Light.cpp">
       <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="XTime.cpp">
+      <Filter>Time</Filter>
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
