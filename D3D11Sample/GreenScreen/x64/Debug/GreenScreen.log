@@ -1,2 +1,17 @@
-﻿  Graphics.cpp
-  GreenScreen.vcxproj -> C:\Users\kclou\OneDrive\School Work\Month14_Pro&Port4\P-P4_Graphics2\D3D11Sample\x64\Debug\GreenScreen.exe
+﻿  compilation header save succeeded; see C:\Users\Kai Huang\OneDrive\School Work\Month14_Pro&Port4\P-P4_Graphics2\D3D11Sample\GreenScreen\PixelShader.csh
+  compilation object save succeeded; see C:\Users\Kai Huang\OneDrive\School Work\Month14_Pro&Port4\P-P4_Graphics2\D3D11Sample\x64\Debug\PixelShader.cso
+  compilation header save succeeded; see C:\Users\Kai Huang\OneDrive\School Work\Month14_Pro&Port4\P-P4_Graphics2\D3D11Sample\GreenScreen\VertexShader.csh
+  compilation object save succeeded; see C:\Users\Kai Huang\OneDrive\School Work\Month14_Pro&Port4\P-P4_Graphics2\D3D11Sample\x64\Debug\VertexShader.cso
+  GDirectX11Surface.cpp
+  GWindow.cpp
+  Camera.cpp
+  DDSTextureLoader.cpp
+  Graphics.cpp
+  Light.cpp
+  main.cpp
+  Mesh.cpp
+  Model.cpp
+  XTime.cpp
+  Generating Code...
+C:\Users\Kai Huang\OneDrive\School Work\Month14_Pro&Port4\P-P4_Graphics2\D3D11Sample\GreenScreen\Mesh.cpp(37): warning C4172:  returning address of local variable or temporary
+  GreenScreen.vcxproj -> C:\Users\Kai Huang\OneDrive\School Work\Month14_Pro&Port4\P-P4_Graphics2\D3D11Sample\x64\Debug\GreenScreen.exe

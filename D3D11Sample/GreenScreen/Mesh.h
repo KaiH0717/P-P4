@@ -9,9 +9,9 @@ using namespace DirectX;
 struct Vertex
 {
 	XMFLOAT4 position;
-	XMFLOAT2 texture;
-	XMFLOAT3 normal;
 	XMFLOAT4 color;
+	XMFLOAT3 normal;
+	XMFLOAT2 texture;
 };
 
 class Mesh

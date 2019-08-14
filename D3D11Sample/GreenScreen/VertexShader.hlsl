@@ -3,17 +3,17 @@
 struct InputVertex
 {
 	float4 position : POSITION;
-	float2 tex : TEXCOORD0;
-	float3 normal : NORMAL;
     float4 color : COLOR0;
+	float3 normal : NORMAL;
+	float2 tex : TEXCOORD0;
 };
 
 struct OutputVertex
 {
 	float4 position : SV_POSITION;
-	float2 tex : TEXCOORD0;
-	float3 normal : NORMAL;
     float4 color : COLOR0;
+	float3 normal : NORMAL;
+	float2 tex : TEXCOORD0;
 };
 
 cbuffer ConstantBuffer : register( b0 )
@@ -41,7 +41,7 @@ OutputVertex main(InputVertex input)
     float ratio = saturate(dot((float3) lightNor[0], output.normal) + 0.25f);
     float4 color1 = lerp(float4(0.0f, 0.0f, 0.0f, 1.0f), lightColor[0], ratio);
     // point lighting
-    float3 pointLightDir = normalize(lightPos[1] - output.position);
+    float3 pointLightDir = (float3)normalize(lightPos[1] - output.position);
     float pointLightRatio = saturate(dot(pointLightDir, output.normal) + 0.25f);
     float attenuation = 1.0f - saturate((length(lightPos[1] - output.position) / lightRadius.x));
     pointLightRatio = attenuation * attenuation * pointLightRatio;

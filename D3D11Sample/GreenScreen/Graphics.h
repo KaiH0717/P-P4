@@ -15,9 +15,9 @@
 
 // include my own files and other helpful files
 #include "Camera.h"
-#include "Mesh.h"
+#include "Model.h"
 #include "Light.h"
-#include <vector>
+// Lari's time class
 #include "XTime.h"
 
 struct ConstantBuffer
