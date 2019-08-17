@@ -14,6 +14,7 @@
 #include <d3d11.h>
 
 // include my own files and other helpful files
+#include "FBXBinaryFileIO.h"
 #include "Camera.h"
 #include "Model.h"
 #include "Light.h"
@@ -27,9 +28,9 @@ struct ConstantBuffer
 	XMFLOAT4X4 view;
 	XMFLOAT4X4 projection;
 	// [0] = directional lighting, [1] = point lighting
-	XMFLOAT4 lightPos[2];
-	XMFLOAT4 lightNormal[2];
-	XMFLOAT4 lightColor[2];
+	XMFLOAT4 lightPos[3];
+	XMFLOAT4 lightNormal[3];
+	XMFLOAT4 lightColor[3];
 	XMFLOAT4 lightRadius;
 };
 
@@ -56,11 +57,12 @@ class Graphics
 	std::vector<Mesh*> meshes;
 	ConstantBuffer cb;
 	bool shrink = false;
-	float radius = 1.0f;
+	float radius = 5.0f;
 	float PS_Unique = 0.0f;
 	Camera camera;
 	Light dLight;
 	Light pLight;
+	Light sLight;
 	Mesh hub;
 	// model class
 	// vertex, index buffer
@@ -68,6 +70,8 @@ class Graphics
 	XTime time;
 	double elapsedTime;
 	bool wave;
+
+	FBXBinaryFileIO fileIO;
 public:
 	// Init constructor
 	Graphics(GW::SYSTEM::GWindow* attatchPoint);
@@ -75,7 +79,7 @@ public:
 	~Graphics();
 	// Draw
 	void Render();
-	// Init func
+	// Init function
 	HRESULT InitializeDevice();
 	void CleanDevice();
 	HRESULT CreateBuffer(ID3D11Device* device,ID3D11Buffer** buffer, UINT bindFlag, UINT byteWidth, const void* pSysMem);

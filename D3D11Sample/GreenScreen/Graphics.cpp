@@ -3,9 +3,8 @@
 // shader includes
 #include "VertexShader.csh"
 #include "PixelShader.csh"
-#include "../../My assets/StoneHenge.h"
-#include "../../My assets/Artisans_Hub.h"
-#include "DDSTextureLoader.h"
+
+#define RAND_COLOR XMFLOAT4(rand()/float(RAND_MAX),rand()/float(RAND_MAX),rand()/float(RAND_MAX),1.0f)
 
 Graphics::Graphics(GW::SYSTEM::GWindow* attatchPoint)
 {
@@ -21,9 +20,9 @@ Graphics::Graphics(GW::SYSTEM::GWindow* attatchPoint)
 
 			// Initalize device
 			HRESULT hr = InitializeDevice();
-			camera.SetPosition(0.0f, 2.0f, -5.0f);
-			camera.SetProjection(90.0f, 1.0f, 0.1f, 20.0f);
-			pLight.SetPosition(-1.0f, 0.5f, 1.0f);
+			camera.SetPosition(0.0f, 0.0f, -20.0f);
+			camera.SetProjection(90.0f, 1.0f, 0.1f, 500.0f);
+			pLight.SetPosition(0.0f, 5.0f, 0.0f);
 			pLight.SetNormal(0.0f, 0.0f, 0.0f);
 			dLight.SetPosition(0.0f, 0.0f, 0.0f);
 			dLight.SetNormal(0.577f, 0.577f, -0.577f);
@@ -71,7 +70,7 @@ void Graphics::Render()
 			ID3D11RenderTargetView* const targets[] = { myRenderTargetView };
 			myContext->OMSetRenderTargets(1, targets, myDepthStencilView);
 			// Clear screen
-			const float bg_Color[] = { 0, 0, 0, 1 };
+			const float bg_Color[] = { 0.0f, 0.0f, 0.4f, 1.0f };
 			myContext->ClearRenderTargetView(myRenderTargetView, bg_Color);
 
 			// keyboard inputs
@@ -108,7 +107,7 @@ void Graphics::Render()
 			XMStoreFloat4(&cb.lightNormal[1], pLight.GetNormalVectorNormalized());
 			XMStoreFloat4(&cb.lightColor[1], pLight.GetColor());
 			// point light radius
-			if (radius > 4.0f)
+			if (radius > 10.0f)
 				shrink = true;
 			else if (radius <= 1.0f)
 				shrink = false;
@@ -121,10 +120,11 @@ void Graphics::Render()
 
 			// world
 			XMMATRIX temp = XMMatrixIdentity();
-			temp = XMMatrixTranslation(0.0f, 0.0f, 0.5f);
+			//temp = XMMatrixRotationY(90.0f * 0.1f);
+			//temp = XMMatrixMultiply(XMMatrixRotationZ(60.0f * 0.1f), temp);
+			//temp = XMMatrixMultiply(XMMatrixRotationX(90.0f * 0.1f), temp);
 			XMStoreFloat4x4(&cb.world, temp);
 			// view
-
 			XMStoreFloat4x4(&cb.view, camera.GetViewMatrix());
 			// projection
 			float ar = 0.0f;
@@ -142,7 +142,8 @@ void Graphics::Render()
 			myContext->PSSetShaderResources(0, 1, &shaderRV);
 			myContext->PSSetSamplers(0, 1, &sampler);
 			// draw
-			myContext->DrawIndexed(meshes[0]->GetIndexCount(), 0, 0);
+			myContext->DrawIndexed(hub.indexCount, 0, 0);
+			//myContext->DrawIndexed(meshes[0]->indexCount, 0, 0);
 
 			// Present Backbuffer using Swapchain object
 			// Framerate is currently unlocked, we suggest "MSI Afterburner" to track your current FPS and memory usage.
@@ -171,37 +172,44 @@ HRESULT Graphics::InitializeDevice()
 	};
 	hr = myDevice->CreateInputLayout(layout, ARRAYSIZE(layout), VertexShader, sizeof(VertexShader), &vertexLayout);
 
+	// load data from binary file
+	fileIO.Read("../../My assets/Corvette_Data");
+	float scale = 0.005f;
 	// fill vertices
-	hub.SetName("ArtisansHub");
-	hub.SetIndexCount(ARRAYSIZE(Artisans_Hub_indicies));
-	hub.SetVertexCount(ARRAYSIZE(Artisans_Hub_data));
-	hub.SetIndices((void*)Artisans_Hub_indicies);
-	hub.SetVertices(new Vertex[hub.GetVertexCount()]);
-	for (size_t i = 0; i < hub.GetVertexCount(); i++)
+	hub.name = "ArtisansHub";
+	hub.indexCount = fileIO.indexCount;
+	hub.vertexCount = fileIO.vertexCount;
+	hub.indices = new unsigned int[hub.indexCount];
+	hub.vertices = new Vertex[hub.vertexCount];
+	for (size_t i = 0; i < hub.vertexCount; i++)
 	{
-		hub.GetVertices()[i].position.x = Artisans_Hub_data[i].pos[0] * 0.1f;
-		hub.GetVertices()[i].position.y = Artisans_Hub_data[i].pos[1] * 0.1f;
-		hub.GetVertices()[i].position.z = Artisans_Hub_data[i].pos[2] * 0.1f;
-		hub.GetVertices()[i].position.w = 1.0f;
+		hub.vertices[i].position.x = fileIO.vertices[i].position[0] * scale;
+		hub.vertices[i].position.y = fileIO.vertices[i].position[1] * scale;
+		hub.vertices[i].position.z = fileIO.vertices[i].position[2] * scale;
+		hub.vertices[i].position.w = 1.0f;
 
-		hub.GetVertices()[i].texture.x = Artisans_Hub_data[i].uvw[0];
-		hub.GetVertices()[i].texture.y = Artisans_Hub_data[i].uvw[1];
+		hub.vertices[i].texture.x = fileIO.vertices[i].texture[0];
+		hub.vertices[i].texture.y = fileIO.vertices[i].texture[1];
 
-		hub.GetVertices()[i].normal.x = Artisans_Hub_data[i].nrm[0];
-		hub.GetVertices()[i].normal.y = Artisans_Hub_data[i].nrm[1];
-		hub.GetVertices()[i].normal.z = Artisans_Hub_data[i].nrm[2];
+		hub.vertices[i].normal.x = fileIO.vertices[i].normal[0];
+		hub.vertices[i].normal.y = fileIO.vertices[i].normal[1];
+		hub.vertices[i].normal.z = fileIO.vertices[i].normal[2];
 
-		hub.GetVertices()[i].color = { 1.0f, 1.0f, 1.0f, 1.0f };
+		hub.vertices[i].color = XMFLOAT4(0.3f, 0.3f, 0.3f, 1.0f);
+	}
+	for (size_t i = 0; i < hub.indexCount; i++)
+	{
+		hub.indices[i] = fileIO.indices[i];
 	}
 	meshes.push_back(&hub);
 	// describe vertex data and create vertex buffer
-	hr = CreateBuffer(myDevice, &vertexBuffer, D3D11_BIND_VERTEX_BUFFER, sizeof(Vertex) * hub.GetVertexCount(), hub.GetVertices());
+	hr = CreateBuffer(myDevice, &vertexBuffer, D3D11_BIND_VERTEX_BUFFER, sizeof(Vertex) * hub.vertexCount, hub.vertices);
 	// describe index data and create index buffer
-	hr = CreateBuffer(myDevice, &indexBuffer, D3D11_BIND_INDEX_BUFFER, sizeof(unsigned int) * hub.GetIndexCount(), hub.GetIndices());
+	hr = CreateBuffer(myDevice, &indexBuffer, D3D11_BIND_INDEX_BUFFER, sizeof(unsigned int) * hub.indexCount, hub.indices);
 	// describe constant variables and create constant buffer
 	hr = CreateBuffer(myDevice, &constantBuffer, D3D11_BIND_CONSTANT_BUFFER, sizeof(ConstantBuffer), nullptr);
 	// load texture
-	hr = CreateDDSTextureFromFile(myDevice, L"../../My assets/Textures/High.dds", nullptr, &shaderRV);
+	hr = CreateDDSTextureFromFile(myDevice, L"../../My assets/Textures/SF_Corvette-F3_diffuse.dds", nullptr, &shaderRV);
 	// create sample
 	D3D11_SAMPLER_DESC sampDesc;
 	ZeroMemory(&sampDesc, sizeof(D3D11_SAMPLER_DESC));
@@ -360,5 +368,10 @@ void Graphics::KeyboardHandle(float delta)
 	// waviness
 	if (GetAsyncKeyState('F') & 0x1)
 		wave = !wave;
+	if (GetAsyncKeyState('R') & 0x1)
+	{
+		camera.SetPosition(0.0f, 0.0f, -20.0f);
+		camera.SetProjection(90.0f, 1.0f, 0.1f, 500.0f);
+	}
 	camera.UpdateView();
 }

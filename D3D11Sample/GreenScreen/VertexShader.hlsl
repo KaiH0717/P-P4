@@ -21,9 +21,9 @@ cbuffer ConstantBuffer : register( b0 )
     float4x4 world;
     float4x4 view;
     float4x4 projection;
-    float4 lightPos[2];
-    float4 lightNor[2];
-    float4 lightColor[2];
+    float4 lightPos[3];
+    float4 lightNor[3];
+    float4 lightColor[3];
     float4 lightRadius;
 };
 
@@ -38,18 +38,20 @@ OutputVertex main(InputVertex input)
     output.position.x += sin(output.position.y * 0.1f + lightRadius.z) * lightRadius.w;
     output.position.y += cos(output.position.x * 0.1f + lightRadius.z) * lightRadius.w;
     // directional lighting
-    float ratio = saturate(dot((float3) lightNor[0], output.normal) + 0.25f);
+    float ratio = saturate(dot((float3) lightNor[0], output.normal) + 0.45f);
     float4 color1 = lerp(float4(0.0f, 0.0f, 0.0f, 1.0f), lightColor[0], ratio);
     // point lighting
     float3 pointLightDir = (float3)normalize(lightPos[1] - output.position);
-    float pointLightRatio = saturate(dot(pointLightDir, output.normal) + 0.25f);
+    float pointLightRatio = saturate(dot(pointLightDir, output.normal) + 0.45f);
     float attenuation = 1.0f - saturate((length(lightPos[1] - output.position) / lightRadius.x));
     pointLightRatio = attenuation * attenuation * pointLightRatio;
     float4 color2 = lerp(float4(0.0f, 0.0f, 0.0f, 1.0f), lightColor[1], pointLightRatio);
+    // spot light
+
 
     output.position = mul(output.position, view);
     output.position = mul(output.position, projection);
 	output.tex = input.tex;
-    output.color = color1 + color2;
+    output.color = /*color1 + */color2 /*+ input.color*/;
 	return output;
 }

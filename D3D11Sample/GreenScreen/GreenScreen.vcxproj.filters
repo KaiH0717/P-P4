@@ -21,6 +21,9 @@
     <Filter Include="Time">
       <UniqueIdentifier>{f1cfdd56-9d41-4f40-a737-96b3fddcb373}</UniqueIdentifier>
     </Filter>
+    <Filter Include="FBX File IO">
+      <UniqueIdentifier>{edb1c3b0-e6c1-40d6-9f2d-1bfd84037f08}</UniqueIdentifier>
+    </Filter>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="Graphics.h">
@@ -44,6 +47,12 @@
     <ClInclude Include="Model.h">
       <Filter>Header Files</Filter>
     </ClInclude>
+    <ClInclude Include="FBXBinaryFileIO.h">
+      <Filter>FBX File IO</Filter>
+    </ClInclude>
+    <ClInclude Include="Vertex.h">
+      <Filter>FBX File IO</Filter>
+    </ClInclude>
   </ItemGroup>
   <ItemGroup>
     <ClCompile Include="main.cpp">
@@ -62,9 +71,6 @@
       <Filter>Texture</Filter>
     </ClCompile>
     <ClCompile Include="Camera.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="Mesh.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="Light.cpp">
