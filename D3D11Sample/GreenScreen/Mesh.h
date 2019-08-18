@@ -26,6 +26,7 @@ struct Mesh
 	unsigned int* indices = nullptr;
 	unsigned int vertexCount = 0;
 	unsigned int indexCount = 0;
+	float scale = 1.0f;
 
 	//////////////////////////////
 	// buffers
@@ -51,7 +52,7 @@ struct Mesh
 	HRESULT CreateIndexBuffer(ID3D11Device* device);
 	HRESULT CreateVertexShader(ID3D11Device* device, const void* shaderBytecode);
 	HRESULT CreatePixelShader(ID3D11Device* device, const void* shaderBytecode);
-	HRESULT CreateShaderResourceView(ID3D11Device* device);
+	HRESULT CreateShaderResourceView(ID3D11Device* device, const wchar_t* fileName);
 	HRESULT CreateSamplerState(ID3D11Device* device);
 };
 
@@ -88,8 +89,7 @@ inline HRESULT Mesh::CreateVertexBuffer(ID3D11Device* device)
 		bufferDesc.StructureByteStride = 0;
 		bufferDesc.Usage = D3D11_USAGE_IMMUTABLE;
 		subRsrcData.pSysMem = this->vertices;
-		device->CreateBuffer(&bufferDesc, &subRsrcData, &this->vertexBuffer);
-		return S_OK;
+		return device->CreateBuffer(&bufferDesc, &subRsrcData, &this->vertexBuffer);
 	}
 	return E_INVALIDARG;
 }
@@ -109,8 +109,7 @@ inline HRESULT Mesh::CreateIndexBuffer(ID3D11Device* device)
 		bufferDesc.StructureByteStride = 0;
 		bufferDesc.Usage = D3D11_USAGE_IMMUTABLE;
 		subRsrcData.pSysMem = this->indices;
-		device->CreateBuffer(&bufferDesc, &subRsrcData, &this->indexBuffer);
-		return S_OK;
+		return device->CreateBuffer(&bufferDesc, &subRsrcData, &this->indexBuffer);
 	}
 	return E_INVALIDARG;
 }
@@ -119,8 +118,7 @@ inline HRESULT Mesh::CreateVertexShader(ID3D11Device* device, const void* shader
 {
 	if (device)
 	{
-		device->CreateVertexShader(shaderBytecode, sizeof(shaderBytecode), nullptr, &vertexShader);
-		return S_OK;
+		return device->CreateVertexShader(shaderBytecode, sizeof(shaderBytecode), nullptr, &vertexShader);
 	}
 	return E_INVALIDARG;
 }
@@ -129,20 +127,16 @@ inline HRESULT Mesh::CreatePixelShader(ID3D11Device* device, const void* shaderB
 {
 	if (device)
 	{
-		device->CreatePixelShader(shaderBytecode, sizeof(shaderBytecode), nullptr, &pixelShader);
-		return S_OK;
+		return device->CreatePixelShader(shaderBytecode, sizeof(shaderBytecode), nullptr, &pixelShader);
 	}
 	return E_INVALIDARG;
 }
 
-inline HRESULT Mesh::CreateShaderResourceView(ID3D11Device* device)
+inline HRESULT Mesh::CreateShaderResourceView(ID3D11Device* device, const wchar_t* fileName)
 {
 	if (device)
 	{
-		D3D11_BUFFER_DESC bufferDesc;
-		D3D11_SUBRESOURCE_DATA subRsrcData;
-		ZeroMemory(&bufferDesc, sizeof(D3D11_BUFFER_DESC));
-		ZeroMemory(&subRsrcData, sizeof(D3D11_SUBRESOURCE_DATA));
+		return CreateDDSTextureFromFile(device, fileName, nullptr, &shaderRV);
 	}
 	return E_INVALIDARG;
 }
@@ -151,10 +145,16 @@ inline HRESULT Mesh::CreateSamplerState(ID3D11Device* device)
 {
 	if (device)
 	{
-		D3D11_BUFFER_DESC bufferDesc;
-		D3D11_SUBRESOURCE_DATA subRsrcData;
-		ZeroMemory(&bufferDesc, sizeof(D3D11_BUFFER_DESC));
-		ZeroMemory(&subRsrcData, sizeof(D3D11_SUBRESOURCE_DATA));
+		D3D11_SAMPLER_DESC sampleDesc;
+		ZeroMemory(&sampleDesc, sizeof(D3D11_SAMPLER_DESC));
+		sampleDesc.Filter = D3D11_FILTER_MIN_MAG_MIP_LINEAR;
+		sampleDesc.AddressU = D3D11_TEXTURE_ADDRESS_WRAP;
+		sampleDesc.AddressV = D3D11_TEXTURE_ADDRESS_WRAP;
+		sampleDesc.AddressW = D3D11_TEXTURE_ADDRESS_WRAP;
+		sampleDesc.ComparisonFunc = D3D11_COMPARISON_NEVER;
+		sampleDesc.MinLOD = 0;
+		sampleDesc.MaxLOD = D3D11_FLOAT32_MAX;
+		return device->CreateSamplerState(&sampleDesc, &sampler);
 	}
 	return E_INVALIDARG;
 }

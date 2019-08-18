@@ -21,17 +21,24 @@
 // Lari's time class
 #include "XTime.h"
 
-struct ConstantBuffer
+struct Matrix_ConstantBuffer
 {
 	// storage type for permenant use
 	XMFLOAT4X4 world;
 	XMFLOAT4X4 view;
 	XMFLOAT4X4 projection;
-	// [0] = directional lighting, [1] = point lighting
+};
+
+struct Light_ConstantBuffer
+{
+	// [0] = directional lighting, [1] = point lighting, [2] = spot lighting
 	XMFLOAT4 lightPos[3];
 	XMFLOAT4 lightNormal[3];
 	XMFLOAT4 lightColor[3];
+	// x = radius, y = rotation, z = time, w = wavy toggle
 	XMFLOAT4 lightRadius;
+	// x = inner cone ratio, y = outer cone ratio
+	XMFLOAT4 coneRatio;
 };
 
 class Graphics
@@ -44,18 +51,24 @@ class Graphics
 	ID3D11DeviceContext* myContext = nullptr;
 
 	// D3D11 resource variables
-	ID3D11Buffer* constantBuffer = nullptr;
+	ID3D11Buffer* matrix_id3d11buffer;
+	ID3D11Buffer* light_id3d11buffer;
+
 	ID3D11Buffer* vertexBuffer = nullptr;
 	ID3D11Buffer* indexBuffer = nullptr;
-	ID3D11InputLayout* vertexLayout = nullptr;
+	ID3D11InputLayout* inputLayout = nullptr;
+
 	ID3D11VertexShader* vertexShader = nullptr;
 	ID3D11PixelShader* pixelShader = nullptr;
 	// textures
 	ID3D11ShaderResourceView* shaderRV = nullptr;
 	ID3D11SamplerState* sampler = nullptr;
 
+	// constant buffers
+	Matrix_ConstantBuffer matrix_cb;
+	Light_ConstantBuffer light_cb;
+
 	std::vector<Mesh*> meshes;
-	ConstantBuffer cb;
 	bool shrink = false;
 	float radius = 5.0f;
 	float PS_Unique = 0.0f;

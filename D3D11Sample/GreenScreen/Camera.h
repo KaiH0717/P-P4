@@ -22,6 +22,9 @@ private:
 public:
 	Camera();
 
+	////////////////////////////////////////
+	// Projection matrix getters
+	////////////////////////////////////////
 	float GetFOV() const;
 	float GetAspectRatio() const;
 	float GetNearPlane() const;
@@ -30,11 +33,17 @@ public:
 	const XMMATRIX GetViewMatrix() const;
 	const XMMATRIX GetProjectionMatrix() const;
 
+	////////////////////////////////////////
+	// Projection matrix setters
+	////////////////////////////////////////
 	void SetFOV(float fov);
 	void SetAspectRatio(float aspectRatio);
 	void SetNearPlane(float nearPlane);
 	void SetFarPlane(float farPlane);
 	void SetProjection(float fov, float aspectRatio, float nearPlane, float farPlane);
+	////////////////////////////////////////
+	// View matrix setters
+	////////////////////////////////////////
 	void SetPosition(float x, float y, float z);
 
 	void IncreaseFOV(float offset);

@@ -20,12 +20,14 @@ Graphics::Graphics(GW::SYSTEM::GWindow* attatchPoint)
 
 			// Initalize device
 			HRESULT hr = InitializeDevice();
-			camera.SetPosition(0.0f, 0.0f, -20.0f);
+			camera.SetPosition(0.0f, 5.0f, -20.0f);
 			camera.SetProjection(90.0f, 1.0f, 0.1f, 500.0f);
-			pLight.SetPosition(0.0f, 5.0f, 0.0f);
-			pLight.SetNormal(0.0f, 0.0f, 0.0f);
 			dLight.SetPosition(0.0f, 0.0f, 0.0f);
 			dLight.SetNormal(0.577f, 0.577f, -0.577f);
+			pLight.SetPosition(0.0f, 5.0f, 0.0f);
+			pLight.SetNormal(0.0f, 0.0f, 0.0f);
+			sLight.SetPosition(0.0f, 15.0f, 0.0f);
+			sLight.SetNormal(0.577f, 0.577f, -0.577f);
 			time.Restart();
 			elapsedTime = 0;
 			wave = false;
@@ -70,7 +72,7 @@ void Graphics::Render()
 			ID3D11RenderTargetView* const targets[] = { myRenderTargetView };
 			myContext->OMSetRenderTargets(1, targets, myDepthStencilView);
 			// Clear screen
-			const float bg_Color[] = { 0.0f, 0.0f, 0.4f, 1.0f };
+			const float bg_Color[] = { 0.4f, 0.4f, 0.4f, 1.0f };
 			myContext->ClearRenderTargetView(myRenderTargetView, bg_Color);
 
 			// keyboard inputs
@@ -81,7 +83,7 @@ void Graphics::Render()
 			// setup pipeline
 			UINT strides = sizeof(Vertex);
 			UINT offsets = 0;
-			myContext->IASetInputLayout(vertexLayout);
+			myContext->IASetInputLayout(inputLayout);
 			myContext->IASetVertexBuffers(0, 1, &vertexBuffer, &strides, &offsets);
 			myContext->IASetIndexBuffer(indexBuffer, DXGI_FORMAT_R32_UINT, 0);
 			myContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
@@ -95,17 +97,28 @@ void Graphics::Render()
 			dLight.UpdatePositionVector();
 			dLight.UpdateNormalVector();
 			dLight.SetColor(0.75f, 0.75f, 0.94f, 1.0f);
-			XMStoreFloat4(&cb.lightPos[0], dLight.GetPositionVector());
-			XMStoreFloat4(&cb.lightNormal[0], dLight.GetNormalVectorNormalized());
-			XMStoreFloat4(&cb.lightColor[0], dLight.GetColor());
+			XMStoreFloat4(&light_cb.lightPos[0], dLight.GetPositionVector());
+			XMStoreFloat4(&light_cb.lightNormal[0], dLight.GetNormalVectorNormalized());
+			XMStoreFloat4(&light_cb.lightColor[0], dLight.GetColor());
 			// point light
 			pLight.SetWorldMatrix(XMMatrixRotationY(0.01f));
 			pLight.UpdatePositionVector();
 			pLight.UpdateNormalVector();
 			pLight.SetColor(1.0f, 0.0f, 0.0f, 1.0f);
-			XMStoreFloat4(&cb.lightPos[1], pLight.GetPositionVector());
-			XMStoreFloat4(&cb.lightNormal[1], pLight.GetNormalVectorNormalized());
-			XMStoreFloat4(&cb.lightColor[1], pLight.GetColor());
+			XMStoreFloat4(&light_cb.lightPos[1], pLight.GetPositionVector());
+			XMStoreFloat4(&light_cb.lightNormal[1], pLight.GetNormalVectorNormalized());
+			XMStoreFloat4(&light_cb.lightColor[1], pLight.GetColor());
+			// spot light
+			sLight.SetPosition(radius * 5.0f, 15.0f, radius * 5.0f);
+			sLight.SetWorldMatrix(XMMatrixRotationY(0.01f));
+			sLight.UpdatePositionVector();
+			sLight.UpdateNormalVector();
+			sLight.SetColor(0.541f, 0.168f, 0.886f, 1.0f);
+			XMVECTOR coneRatio = { 0.98f, 0.88f, 0.0f, 0.0f };
+			XMStoreFloat4(&light_cb.coneRatio, coneRatio);
+			XMStoreFloat4(&light_cb.lightPos[2], sLight.GetPositionVector());
+			XMStoreFloat4(&light_cb.lightNormal[2], sLight.GetNormalVectorNormalized());
+			XMStoreFloat4(&light_cb.lightColor[2], sLight.GetColor());
 			// point light radius
 			if (radius > 10.0f)
 				shrink = true;
@@ -116,34 +129,35 @@ void Graphics::Render()
 			else
 				radius += 0.03f;
 			XMVECTOR lightRad = { radius, rot, (float)elapsedTime, (float)wave };
-			XMStoreFloat4(&cb.lightRadius, lightRad);
+			XMStoreFloat4(&light_cb.lightRadius, lightRad);
 
 			// world
 			XMMATRIX temp = XMMatrixIdentity();
-			//temp = XMMatrixRotationY(90.0f * 0.1f);
-			//temp = XMMatrixMultiply(XMMatrixRotationZ(60.0f * 0.1f), temp);
-			//temp = XMMatrixMultiply(XMMatrixRotationX(90.0f * 0.1f), temp);
-			XMStoreFloat4x4(&cb.world, temp);
+			//temp = XMMatrixRotationY(90.0f);
+			XMStoreFloat4x4(&matrix_cb.world, temp);
 			// view
-			XMStoreFloat4x4(&cb.view, camera.GetViewMatrix());
+			XMStoreFloat4x4(&matrix_cb.view, camera.GetViewMatrix());
 			// projection
 			float ar = 0.0f;
 			mySurface->GetAspectRatio(ar);
 			camera.SetAspectRatio(ar);
-			XMStoreFloat4x4(&cb.projection, camera.GetProjectionMatrix());
+			XMStoreFloat4x4(&matrix_cb.projection, camera.GetProjectionMatrix());
 			// map constant buffer
+			ID3D11Buffer* constantBuffer[] = { matrix_id3d11buffer, light_id3d11buffer };
 			D3D11_MAPPED_SUBRESOURCE gpuBuffer;
-			myContext->Map(constantBuffer, 0, D3D11_MAP_WRITE_DISCARD, 0, &gpuBuffer);
-			memcpy(gpuBuffer.pData, &cb, sizeof(ConstantBuffer));
-			myContext->Unmap(constantBuffer, 0);
+			myContext->Map(constantBuffer[0], 0, D3D11_MAP_WRITE_DISCARD, 0, &gpuBuffer);
+			memcpy(gpuBuffer.pData, &matrix_cb, sizeof(Matrix_ConstantBuffer));
+			myContext->Unmap(constantBuffer[0], 0);
+			myContext->Map(constantBuffer[1], 0, D3D11_MAP_WRITE_DISCARD, 0, &gpuBuffer);
+			memcpy(gpuBuffer.pData, &light_cb, sizeof(Light_ConstantBuffer));
+			myContext->Unmap(constantBuffer[1], 0);
 
-			myContext->VSSetConstantBuffers(0, 1, &constantBuffer);
-			myContext->PSSetConstantBuffers(0, 1, &constantBuffer);
+			myContext->VSSetConstantBuffers(0, 2, constantBuffer);
+			myContext->PSSetConstantBuffers(0, 2, constantBuffer);
 			myContext->PSSetShaderResources(0, 1, &shaderRV);
 			myContext->PSSetSamplers(0, 1, &sampler);
 			// draw
 			myContext->DrawIndexed(hub.indexCount, 0, 0);
-			//myContext->DrawIndexed(meshes[0]->indexCount, 0, 0);
 
 			// Present Backbuffer using Swapchain object
 			// Framerate is currently unlocked, we suggest "MSI Afterburner" to track your current FPS and memory usage.
@@ -170,11 +184,11 @@ HRESULT Graphics::InitializeDevice()
 		{"NORMAL"  , 0, DXGI_FORMAT_R32G32B32_FLOAT	  , 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0},
 		{"TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT	  , 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0}
 	};
-	hr = myDevice->CreateInputLayout(layout, ARRAYSIZE(layout), VertexShader, sizeof(VertexShader), &vertexLayout);
+	hr = myDevice->CreateInputLayout(layout, ARRAYSIZE(layout), VertexShader, sizeof(VertexShader), &inputLayout);
 
 	// load data from binary file
-	fileIO.Read("../../My assets/Corvette_Data");
-	float scale = 0.005f;
+	fileIO.Read("../../My assets/Plane_Data");
+	float scale = 5.0f/*0.005f*/;
 	// fill vertices
 	hub.name = "ArtisansHub";
 	hub.indexCount = fileIO.indexCount;
@@ -192,7 +206,7 @@ HRESULT Graphics::InitializeDevice()
 		hub.vertices[i].texture.y = fileIO.vertices[i].texture[1];
 
 		hub.vertices[i].normal.x = fileIO.vertices[i].normal[0];
-		hub.vertices[i].normal.y = fileIO.vertices[i].normal[1];
+		hub.vertices[i].normal.y = fileIO.vertices[i].normal[1] + 1.0f;
 		hub.vertices[i].normal.z = fileIO.vertices[i].normal[2];
 
 		hub.vertices[i].color = XMFLOAT4(0.3f, 0.3f, 0.3f, 1.0f);
@@ -207,9 +221,10 @@ HRESULT Graphics::InitializeDevice()
 	// describe index data and create index buffer
 	hr = CreateBuffer(myDevice, &indexBuffer, D3D11_BIND_INDEX_BUFFER, sizeof(unsigned int) * hub.indexCount, hub.indices);
 	// describe constant variables and create constant buffer
-	hr = CreateBuffer(myDevice, &constantBuffer, D3D11_BIND_CONSTANT_BUFFER, sizeof(ConstantBuffer), nullptr);
+	hr = CreateBuffer(myDevice, &matrix_id3d11buffer, D3D11_BIND_CONSTANT_BUFFER, sizeof(Matrix_ConstantBuffer), nullptr);
+	hr = CreateBuffer(myDevice, &light_id3d11buffer, D3D11_BIND_CONSTANT_BUFFER, sizeof(Light_ConstantBuffer), nullptr);
 	// load texture
-	hr = CreateDDSTextureFromFile(myDevice, L"../../My assets/Textures/SF_Corvette-F3_diffuse.dds", nullptr, &shaderRV);
+	hr = CreateDDSTextureFromFile(myDevice, L"../../My assets/Textures/Box_Circuit.dds", nullptr, &shaderRV);
 	// create sample
 	D3D11_SAMPLER_DESC sampDesc;
 	ZeroMemory(&sampDesc, sizeof(D3D11_SAMPLER_DESC));
@@ -226,11 +241,12 @@ HRESULT Graphics::InitializeDevice()
 
 void Graphics::CleanDevice()
 {
-	constantBuffer->Release();
+	matrix_id3d11buffer->Release();
+	light_id3d11buffer->Release();
 
 	vertexBuffer->Release();
 	indexBuffer->Release();
-	vertexLayout->Release();
+	inputLayout->Release();
 	vertexShader->Release();
 	pixelShader->Release();
 
@@ -286,92 +302,40 @@ void Graphics::KeyboardHandle(float delta)
 {
 	float offset = 3.5f;
 	// move forward
-	if (GetAsyncKeyState('W'))
-	{
-		camera.MoveZ(offset * delta);
-	}
+	if (GetAsyncKeyState('W')) { camera.MoveZ(offset * delta); }
 	// move left
-	if (GetAsyncKeyState('A'))
-	{
-		camera.MoveX(-offset * delta);
-	}
+	if (GetAsyncKeyState('A')) { camera.MoveX(-offset * delta); }
 	// move backwards
-	if (GetAsyncKeyState('S'))
-	{
-		camera.MoveZ(-offset * delta);
-	}
+	if (GetAsyncKeyState('S')) { camera.MoveZ(-offset * delta); }
 	// move right
-	if (GetAsyncKeyState('D'))
-	{
-		camera.MoveX(offset * delta);
-	}
+	if (GetAsyncKeyState('D')) { camera.MoveX(offset * delta); }
 	// move up
-	if (GetAsyncKeyState('Q'))
-	{
-		camera.MoveY(offset * delta);
-	}
+	if (GetAsyncKeyState('Q')) { camera.MoveY(offset * delta); }
 	// move down
-	if (GetAsyncKeyState('E'))
-	{
-		camera.MoveY(-offset * delta);
-	}
+	if (GetAsyncKeyState('E')) { camera.MoveY(-offset * delta); }
 	// yaw left
-	if (GetAsyncKeyState('J'))
-	{
-		camera.Yaw(-offset * delta);
-	}
+	if (GetAsyncKeyState('J')) { camera.Yaw(-offset * delta); }
 	// yaw right
-	if (GetAsyncKeyState('L'))
-	{
-		camera.Yaw(offset * delta);
-	}
+	if (GetAsyncKeyState('L')) { camera.Yaw(offset * delta); }
 	// pitch up
-	if (GetAsyncKeyState('I'))
-	{
-		camera.Pitch(-offset * delta);
-	}
+	if (GetAsyncKeyState('I')) { camera.Pitch(-offset * delta); }
 	// pitch down
-	if (GetAsyncKeyState('K'))
-	{
-		camera.Pitch(offset * delta);
-	}
+	if (GetAsyncKeyState('K')) { camera.Pitch(offset * delta); }
 	// increase fov
-	if (GetAsyncKeyState('1'))
-	{
-		camera.IncreaseFOV((offset + 25.0f) * delta);
-	}
+	if (GetAsyncKeyState('1')) { camera.IncreaseFOV((offset + 25.0f) * delta); }
 	// decrease fov
-	if (GetAsyncKeyState('2'))
-	{
-		camera.DecreaseFOV((offset + 25.0f) * delta);
-	}
+	if (GetAsyncKeyState('2')) { camera.DecreaseFOV((offset + 25.0f) * delta); }
 	// increase near plane
-	if (GetAsyncKeyState('3'))
-	{
-		camera.IncreaseNearPlane((offset + 10.0f) * delta);
-	}
+	if (GetAsyncKeyState('3')) { camera.IncreaseNearPlane((offset + 10.0f) * delta); }
 	// decrease near plane
-	if (GetAsyncKeyState('4'))
-	{
-		camera.DecreaseNearPlane((offset + 10.0f) * delta);
-	}
+	if (GetAsyncKeyState('4')) { camera.DecreaseNearPlane((offset + 10.0f) * delta); }
 	// increase far plane
-	if (GetAsyncKeyState('5'))
-	{
-		camera.IncreaseFarPlane((offset + 10.0f) * delta);
-	}
+	if (GetAsyncKeyState('5')) { camera.IncreaseFarPlane((offset + 10.0f) * delta); }
 	// decrease far plane
-	if (GetAsyncKeyState('6'))
-	{
-		camera.DecreaseFarPlane((offset + 10.0f) * delta);
-	}
+	if (GetAsyncKeyState('6')) { camera.DecreaseFarPlane((offset + 10.0f) * delta); }
 	// waviness
-	if (GetAsyncKeyState('F') & 0x1)
-		wave = !wave;
-	if (GetAsyncKeyState('R') & 0x1)
-	{
-		camera.SetPosition(0.0f, 0.0f, -20.0f);
-		camera.SetProjection(90.0f, 1.0f, 0.1f, 500.0f);
-	}
+	if (GetAsyncKeyState('F') & 0x1) { wave = !wave; }
+	// reset camera
+	if (GetAsyncKeyState('R') & 0x1) { camera.SetPosition(0.0f, 0.0f, -20.0f); camera.SetProjection(90.0f, 1.0f, 0.1f, 500.0f); }
 	camera.UpdateView();
 }

@@ -6,6 +6,7 @@
 class Model
 {
 private:
+	char* name;
 	// Model attributes
 	std::vector<Mesh*> meshes;
 	// Model's position relative to the world
