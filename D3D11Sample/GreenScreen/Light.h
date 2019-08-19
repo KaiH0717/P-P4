@@ -19,7 +19,6 @@ private:
 public:
 	Light();
 	Light(const XMVECTOR& position, const XMVECTOR& normal, const XMVECTOR& color, const XMMATRIX& world);
-	~Light();
 	
 	const XMVECTOR GetPositionVector() const;
 	const XMVECTOR GetNormalVector() const;
@@ -35,6 +34,5 @@ public:
 	void SetColor(float r, float g, float b, float a);
 	void SetWorldMatrix(const XMMATRIX& world);
 
-	void UpdatePositionVector();
-	void UpdateNormalVector();
+	void UpdatePosition();
 };

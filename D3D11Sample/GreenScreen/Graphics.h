@@ -14,7 +14,6 @@
 #include <d3d11.h>
 
 // include my own files and other helpful files
-#include "FBXBinaryFileIO.h"
 #include "Camera.h"
 #include "Model.h"
 #include "Light.h"
@@ -27,6 +26,8 @@ struct Matrix_ConstantBuffer
 	XMFLOAT4X4 world;
 	XMFLOAT4X4 view;
 	XMFLOAT4X4 projection;
+	// camera position
+	XMFLOAT4 cameraPosition;
 };
 
 struct Light_ConstantBuffer
@@ -37,7 +38,7 @@ struct Light_ConstantBuffer
 	XMFLOAT4 lightColor[3];
 	// x = radius, y = rotation, z = time, w = wavy toggle
 	XMFLOAT4 lightRadius;
-	// x = inner cone ratio, y = outer cone ratio
+	// x = inner cone ratio, y = outer cone ratio, z = black and white toggle
 	XMFLOAT4 coneRatio;
 };
 
@@ -53,38 +54,28 @@ class Graphics
 	// D3D11 resource variables
 	ID3D11Buffer* matrix_id3d11buffer;
 	ID3D11Buffer* light_id3d11buffer;
-
-	ID3D11Buffer* vertexBuffer = nullptr;
-	ID3D11Buffer* indexBuffer = nullptr;
 	ID3D11InputLayout* inputLayout = nullptr;
-
-	ID3D11VertexShader* vertexShader = nullptr;
-	ID3D11PixelShader* pixelShader = nullptr;
-	// textures
-	ID3D11ShaderResourceView* shaderRV = nullptr;
-	ID3D11SamplerState* sampler = nullptr;
-
 	// constant buffers
 	Matrix_ConstantBuffer matrix_cb;
 	Light_ConstantBuffer light_cb;
 
-	std::vector<Mesh*> meshes;
 	bool shrink = false;
 	float radius = 5.0f;
-	float PS_Unique = 0.0f;
 	Camera camera;
 	Light dLight;
 	Light pLight;
 	Light sLight;
-	Mesh hub;
-	// model class
-	// vertex, index buffer
-	// shader, texture
+
 	XTime time;
 	double elapsedTime;
 	bool wave;
+	bool blackWhite;
 
-	FBXBinaryFileIO fileIO;
+	Model corvette;
+	Model arc170;
+	Model plane;
+	Model spaceStation;
+	Model venatorStarDestroyer;
 public:
 	// Init constructor
 	Graphics(GW::SYSTEM::GWindow* attatchPoint);
@@ -97,4 +88,5 @@ public:
 	void CleanDevice();
 	HRESULT CreateBuffer(ID3D11Device* device,ID3D11Buffer** buffer, UINT bindFlag, UINT byteWidth, const void* pSysMem);
 	void KeyboardHandle(float delta);
+	void ConstantBufferSetUp(const XMMATRIX& worldMatrix);
 };

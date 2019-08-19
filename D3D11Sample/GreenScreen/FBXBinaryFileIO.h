@@ -2,7 +2,6 @@
 #include "Vertex.h"
 #include <iostream>
 #include <fstream>
-#include <string>
 #include <vector>
 
 ////////////////////////////////////////////////////////////////////////////////
@@ -58,11 +57,11 @@ public:
 		if (bfout.is_open())
 		{
 			// write vertex data
-			vertexCount = vertices.size();
+			vertexCount = static_cast<unsigned int>(vertices.size());
 			bfout.write((char*)& vertexCount, sizeof(unsigned int));
 			bfout.write((char*)vertices.data(), (sizeof(PER_VERTEX_DATA) * vertexCount));
 			// write index data
-			indexCount = indices.size();
+			indexCount = static_cast<unsigned int>(indices.size());
 			bfout.write((char*)& indexCount, sizeof(unsigned int));
 			bfout.write((char*)indices.data(), (sizeof(unsigned int) * indexCount));
 
@@ -82,7 +81,7 @@ public:
 		{
 			// read vertex data
 			bfin.read((char*)& vertexCount, sizeof(unsigned int)); // read count
-			for (size_t i = 0; i < vertexCount; i++)
+			for (unsigned int i = 0; i < vertexCount; i++)
 			{
 				// populate vertex vector
 				bfin.read((char*)& vertex, sizeof(PER_VERTEX_DATA));
@@ -90,7 +89,7 @@ public:
 			}
 			// read index data
 			bfin.read((char*)& indexCount, sizeof(unsigned int));
-			for (size_t i = 0; i < indexCount; i++)
+			for (unsigned int i = 0; i < indexCount; i++)
 			{
 				// populate index vector
 				bfin.read((char*)& index, sizeof(unsigned int));

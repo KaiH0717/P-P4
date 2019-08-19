@@ -26,10 +26,6 @@ Light::Light(const XMVECTOR& position, const XMVECTOR& normal, const XMVECTOR& c
 	XMStoreFloat4x4(&this->world, this->worldMatrix);
 }
 
-Light::~Light()
-{
-}
-
 const XMVECTOR Light::GetPositionVector() const { return XMLoadFloat4(&position); }
 const XMVECTOR Light::GetNormalVector() const { return XMLoadFloat4(&normal); }
 const XMVECTOR Light::GetNormalVectorNormalized() const { return XMVector4Normalize(this->GetNormalVector()); }
@@ -78,15 +74,10 @@ void Light::SetWorldMatrix(const XMMATRIX& world)
 	XMStoreFloat4x4(&this->world, this->worldMatrix);
 }
 
-void Light::UpdatePositionVector()
+void Light::UpdatePosition()
 {
 	positionVector = XMVector4Transform(positionVector, worldMatrix);
 	XMStoreFloat4(&position, positionVector);
-}
-
-void Light::UpdateNormalVector()
-{
 	normalVector = XMVector4Transform(normalVector, worldMatrix);
 	XMStoreFloat4(&normal, normalVector);
 }
-

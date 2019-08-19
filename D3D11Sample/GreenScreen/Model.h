@@ -17,6 +17,21 @@ public:
 	~Model();
 
 	//////////////////////////////
+	// getters
+	//////////////////////////////
+	char* GetName();
+	std::vector<Mesh*>& GetMeshes();
+	XMMATRIX GetWorldMatrix();
+
+	//////////////////////////////
+	// setters
+	//////////////////////////////
+	void SetName(char* name);
+	void SetWorldMatrix(const XMMATRIX& world);
+
+	void AddMesh(Mesh* mesh);
+
+	//////////////////////////////
 	// draw all meshes
 	//////////////////////////////
 	void Draw(ID3D11DeviceContext* context);

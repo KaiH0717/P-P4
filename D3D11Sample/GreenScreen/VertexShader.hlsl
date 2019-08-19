@@ -22,6 +22,7 @@ cbuffer Matrix_ConstantBuffer : register(b0)
     float4x4 world;
     float4x4 view;
     float4x4 projection;
+    float4 cameraPosition;
 };
 
 cbuffer Light_ConstantBuffer : register(b1)
@@ -32,7 +33,7 @@ cbuffer Light_ConstantBuffer : register(b1)
     float4 lightColor[3];
     // x = radius, y = rotation, z = time, w = wavy toggle
     float4 lightRadius;
-    // x = inner cone ratio, y = outer cone ratio
+    // x = inner cone ratio, y = outer cone ratio, z = black and white toggle
     float4 coneRatio;
 }
 

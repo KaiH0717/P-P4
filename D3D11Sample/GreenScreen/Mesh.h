@@ -8,6 +8,9 @@ using namespace DirectX;
 
 #include <vector>
 
+#include "FBXBinaryFileIO.h"
+
+
 struct Vertex
 {
 	XMFLOAT4 position = XMFLOAT4(0.0f, 0.0f, 0.0f, 1.0f);
@@ -46,12 +49,24 @@ struct Mesh
 	ID3D11ShaderResourceView* shaderRV = nullptr;
 	ID3D11SamplerState* sampler = nullptr;
 
+	//////////////////////////////
+	// clean up all the resource and heap memory
+	//////////////////////////////
 	~Mesh();
+
+	//////////////////////////////
+	// load in vertices
+	//////////////////////////////
+	void LoadVertices(const char* fileName,char* meshName, float scale, XMFLOAT4 normalOffset);
+
+	//////////////////////////////
 	// resource initailization
+	// REMARKS: MUST CALL LoadVertices BEFORE ATTEMPTING TO CREATE ANY RESOURCE
+	//////////////////////////////
 	HRESULT CreateVertexBuffer(ID3D11Device* device);
 	HRESULT CreateIndexBuffer(ID3D11Device* device);
-	HRESULT CreateVertexShader(ID3D11Device* device, const void* shaderBytecode);
-	HRESULT CreatePixelShader(ID3D11Device* device, const void* shaderBytecode);
+	HRESULT CreateVertexShader(ID3D11Device* device, const void* shaderBytecode, SIZE_T bytecodeLength);
+	HRESULT CreatePixelShader(ID3D11Device* device, const void* shaderBytecode, SIZE_T bytecodeLength);
 	HRESULT CreateShaderResourceView(ID3D11Device* device, const wchar_t* fileName);
 	HRESULT CreateSamplerState(ID3D11Device* device);
 };
@@ -64,6 +79,7 @@ inline Mesh::~Mesh()
 	name = nullptr;
 	vertexCount = 0;
 	indexCount = 0;
+	scale = 1.0f;
 
 	// Release resources
 	if (vertexBuffer) { vertexBuffer->Release(); vertexBuffer = nullptr; }
@@ -72,6 +88,38 @@ inline Mesh::~Mesh()
 	if (pixelShader) { pixelShader->Release(); pixelShader = nullptr; }
 	if (shaderRV) { shaderRV->Release(); shaderRV = nullptr; }
 	if (sampler) { sampler->Release(); sampler = nullptr; }
+}
+
+inline void Mesh::LoadVertices(const char* fileName,char* meshName, float scale, XMFLOAT4 normalOffset)
+{
+	FBXBinaryFileIO fileIO;
+	fileIO.Read(fileName);
+	this->name = meshName;
+	this->scale = scale;
+	this->indexCount = fileIO.indexCount;
+	this->vertexCount = fileIO.vertexCount;
+	this->indices = new unsigned int[this->indexCount];
+	this->vertices = new Vertex[this->vertexCount];
+	for (size_t i = 0; i < this->vertexCount; i++)
+	{
+		this->vertices[i].position.x = fileIO.vertices[i].position[0] * this->scale;
+		this->vertices[i].position.y = fileIO.vertices[i].position[1] * this->scale;
+		this->vertices[i].position.z = fileIO.vertices[i].position[2] * this->scale;
+		this->vertices[i].position.w = 1.0f;
+
+		this->vertices[i].texture.x = fileIO.vertices[i].texture[0];
+		this->vertices[i].texture.y = fileIO.vertices[i].texture[1];
+
+		this->vertices[i].normal.x = fileIO.vertices[i].normal[0] + normalOffset.x;
+		this->vertices[i].normal.y = fileIO.vertices[i].normal[1] + normalOffset.y;
+		this->vertices[i].normal.z = fileIO.vertices[i].normal[2] + normalOffset.z;
+
+		this->vertices[i].color = XMFLOAT4(0.3f, 0.3f, 0.3f, 1.0f);
+	}
+	for (size_t i = 0; i < this->indexCount; i++)
+	{
+		this->indices[i] = fileIO.indices[i];
+	}
 }
 
 inline HRESULT Mesh::CreateVertexBuffer(ID3D11Device* device)
@@ -114,20 +162,20 @@ inline HRESULT Mesh::CreateIndexBuffer(ID3D11Device* device)
 	return E_INVALIDARG;
 }
 
-inline HRESULT Mesh::CreateVertexShader(ID3D11Device* device, const void* shaderBytecode)
+inline HRESULT Mesh::CreateVertexShader(ID3D11Device* device, const void* shaderBytecode, SIZE_T bytecodeLength)
 {
 	if (device)
 	{
-		return device->CreateVertexShader(shaderBytecode, sizeof(shaderBytecode), nullptr, &vertexShader);
+		return device->CreateVertexShader(shaderBytecode, bytecodeLength, nullptr, &this->vertexShader);
 	}
 	return E_INVALIDARG;
 }
 
-inline HRESULT Mesh::CreatePixelShader(ID3D11Device* device, const void* shaderBytecode)
+inline HRESULT Mesh::CreatePixelShader(ID3D11Device* device, const void* shaderBytecode, SIZE_T bytecodeLength)
 {
 	if (device)
 	{
-		return device->CreatePixelShader(shaderBytecode, sizeof(shaderBytecode), nullptr, &pixelShader);
+		return device->CreatePixelShader(shaderBytecode, bytecodeLength, nullptr, &this->pixelShader);
 	}
 	return E_INVALIDARG;
 }
@@ -136,7 +184,7 @@ inline HRESULT Mesh::CreateShaderResourceView(ID3D11Device* device, const wchar_
 {
 	if (device)
 	{
-		return CreateDDSTextureFromFile(device, fileName, nullptr, &shaderRV);
+		return CreateDDSTextureFromFile(device, fileName, nullptr, &this->shaderRV);
 	}
 	return E_INVALIDARG;
 }
@@ -154,7 +202,7 @@ inline HRESULT Mesh::CreateSamplerState(ID3D11Device* device)
 		sampleDesc.ComparisonFunc = D3D11_COMPARISON_NEVER;
 		sampleDesc.MinLOD = 0;
 		sampleDesc.MaxLOD = D3D11_FLOAT32_MAX;
-		return device->CreateSamplerState(&sampleDesc, &sampler);
+		return device->CreateSamplerState(&sampleDesc, &this->sampler);
 	}
 	return E_INVALIDARG;
 }

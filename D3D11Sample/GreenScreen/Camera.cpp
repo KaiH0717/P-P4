@@ -138,4 +138,7 @@ void Camera::Yaw(float degrees)
 
 void Camera::Roll(float degrees)
 {
+	XMMATRIX rotation = XMMatrixRotationZ(degrees);
+	worldViewMatrix = XMMatrixMultiply(rotation, worldViewMatrix);
+	XMStoreFloat4x4(&worldView, worldViewMatrix);
 }

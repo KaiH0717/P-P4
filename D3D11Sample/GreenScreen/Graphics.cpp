@@ -22,15 +22,23 @@ Graphics::Graphics(GW::SYSTEM::GWindow* attatchPoint)
 			HRESULT hr = InitializeDevice();
 			camera.SetPosition(0.0f, 5.0f, -20.0f);
 			camera.SetProjection(90.0f, 1.0f, 0.1f, 500.0f);
+			// directional light init
 			dLight.SetPosition(0.0f, 0.0f, 0.0f);
-			dLight.SetNormal(0.577f, 0.577f, -0.577f);
+			dLight.SetNormal(-0.577f, -0.577f, 0.577f);
+			dLight.SetColor(0.75f, 0.75f, 0.94f, 1.0f);
+			// point light init
 			pLight.SetPosition(0.0f, 5.0f, 0.0f);
 			pLight.SetNormal(0.0f, 0.0f, 0.0f);
-			sLight.SetPosition(0.0f, 15.0f, 0.0f);
-			sLight.SetNormal(0.577f, 0.577f, -0.577f);
+			pLight.SetColor(1.0f, 0.0f, 0.0f, 1.0f);
+			// spot light init
+			sLight.SetPosition(0.0f, 50.0f, 0.0f);
+			sLight.SetNormal(-0.577f, -0.577f, 0.577f);
+			sLight.SetColor(0.541f, 0.168f, 0.886f, 1.0f);
+
 			time.Restart();
-			elapsedTime = 0;
+			elapsedTime = 0.0;
 			wave = false;
+			blackWhite = false;
 		}
 	}
 }
@@ -84,80 +92,34 @@ void Graphics::Render()
 			UINT strides = sizeof(Vertex);
 			UINT offsets = 0;
 			myContext->IASetInputLayout(inputLayout);
-			myContext->IASetVertexBuffers(0, 1, &vertexBuffer, &strides, &offsets);
-			myContext->IASetIndexBuffer(indexBuffer, DXGI_FORMAT_R32_UINT, 0);
 			myContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-			myContext->VSSetShader(vertexShader, nullptr, 0);
-			myContext->PSSetShader(pixelShader, nullptr, 0);
 
-			// lighting
-			static float rot = 0.0f; rot += 0.1f;
-			// directional lighting
-			dLight.SetWorldMatrix(XMMatrixRotationY(0.01f));
-			dLight.UpdatePositionVector();
-			dLight.UpdateNormalVector();
-			dLight.SetColor(0.75f, 0.75f, 0.94f, 1.0f);
-			XMStoreFloat4(&light_cb.lightPos[0], dLight.GetPositionVector());
-			XMStoreFloat4(&light_cb.lightNormal[0], dLight.GetNormalVectorNormalized());
-			XMStoreFloat4(&light_cb.lightColor[0], dLight.GetColor());
-			// point light
-			pLight.SetWorldMatrix(XMMatrixRotationY(0.01f));
-			pLight.UpdatePositionVector();
-			pLight.UpdateNormalVector();
-			pLight.SetColor(1.0f, 0.0f, 0.0f, 1.0f);
-			XMStoreFloat4(&light_cb.lightPos[1], pLight.GetPositionVector());
-			XMStoreFloat4(&light_cb.lightNormal[1], pLight.GetNormalVectorNormalized());
-			XMStoreFloat4(&light_cb.lightColor[1], pLight.GetColor());
-			// spot light
-			sLight.SetPosition(radius * 5.0f, 15.0f, radius * 5.0f);
-			sLight.SetWorldMatrix(XMMatrixRotationY(0.01f));
-			sLight.UpdatePositionVector();
-			sLight.UpdateNormalVector();
-			sLight.SetColor(0.541f, 0.168f, 0.886f, 1.0f);
-			XMVECTOR coneRatio = { 0.98f, 0.88f, 0.0f, 0.0f };
-			XMStoreFloat4(&light_cb.coneRatio, coneRatio);
-			XMStoreFloat4(&light_cb.lightPos[2], sLight.GetPositionVector());
-			XMStoreFloat4(&light_cb.lightNormal[2], sLight.GetNormalVectorNormalized());
-			XMStoreFloat4(&light_cb.lightColor[2], sLight.GetColor());
-			// point light radius
-			if (radius > 10.0f)
-				shrink = true;
-			else if (radius <= 1.0f)
-				shrink = false;
-			if (shrink)
-				radius -= 0.03f;
-			else
-				radius += 0.03f;
-			XMVECTOR lightRad = { radius, rot, (float)elapsedTime, (float)wave };
-			XMStoreFloat4(&light_cb.lightRadius, lightRad);
-
-			// world
-			XMMATRIX temp = XMMatrixIdentity();
-			//temp = XMMatrixRotationY(90.0f);
-			XMStoreFloat4x4(&matrix_cb.world, temp);
-			// view
-			XMStoreFloat4x4(&matrix_cb.view, camera.GetViewMatrix());
-			// projection
-			float ar = 0.0f;
-			mySurface->GetAspectRatio(ar);
-			camera.SetAspectRatio(ar);
-			XMStoreFloat4x4(&matrix_cb.projection, camera.GetProjectionMatrix());
-			// map constant buffer
-			ID3D11Buffer* constantBuffer[] = { matrix_id3d11buffer, light_id3d11buffer };
-			D3D11_MAPPED_SUBRESOURCE gpuBuffer;
-			myContext->Map(constantBuffer[0], 0, D3D11_MAP_WRITE_DISCARD, 0, &gpuBuffer);
-			memcpy(gpuBuffer.pData, &matrix_cb, sizeof(Matrix_ConstantBuffer));
-			myContext->Unmap(constantBuffer[0], 0);
-			myContext->Map(constantBuffer[1], 0, D3D11_MAP_WRITE_DISCARD, 0, &gpuBuffer);
-			memcpy(gpuBuffer.pData, &light_cb, sizeof(Light_ConstantBuffer));
-			myContext->Unmap(constantBuffer[1], 0);
-
-			myContext->VSSetConstantBuffers(0, 2, constantBuffer);
-			myContext->PSSetConstantBuffers(0, 2, constantBuffer);
-			myContext->PSSetShaderResources(0, 1, &shaderRV);
-			myContext->PSSetSamplers(0, 1, &sampler);
 			// draw
-			myContext->DrawIndexed(hub.indexCount, 0, 0);
+			XMMATRIX temp = XMMatrixMultiply(XMMatrixRotationY(-160.0f * 0.01f), XMMatrixTranslation(50.0f, 0.0f, 0.0f));
+			corvette.SetWorldMatrix(temp);
+			ConstantBufferSetUp(corvette.GetWorldMatrix());
+			corvette.Draw(myContext);
+
+			//temp = XMMatrixMultiply(XMMatrixTranslation(-20.0f, -20.0f, 0.0f), XMMatrixRotationAxis(XMVectorSet(1.0f, 1.0f, 0.0f, 0.0f), 90.0f));
+			temp = XMMatrixTranslation(-50.0f, 0.0f, 0.0f);
+			arc170.SetWorldMatrix(temp);
+			ConstantBufferSetUp(arc170.GetWorldMatrix());
+			arc170.Draw(myContext);
+
+			temp = XMMatrixTranslation(0.0f, 0.0f, 0.0f);
+			plane.SetWorldMatrix(temp);
+			ConstantBufferSetUp(plane.GetWorldMatrix());
+			plane.Draw(myContext);
+
+			//temp = XMMatrixRotationY(elapsedTime);
+			//spaceStation.SetWorldMatrix(temp);
+			//ConstantBufferSetUp(spaceStation.GetWorldMatrix());
+			//spaceStation.Draw(myContext);
+
+			temp = XMMatrixMultiply(XMMatrixRotationX(30.0f /** venatorStarDestroyer.GetMeshes()[0]->scale*/), XMMatrixTranslation(0.0f, 1.9f, 0.0f));
+			venatorStarDestroyer.SetWorldMatrix(temp);
+			ConstantBufferSetUp(venatorStarDestroyer.GetWorldMatrix());
+			venatorStarDestroyer.Draw(myContext);
 
 			// Present Backbuffer using Swapchain object
 			// Framerate is currently unlocked, we suggest "MSI Afterburner" to track your current FPS and memory usage.
@@ -171,11 +133,6 @@ void Graphics::Render()
 HRESULT Graphics::InitializeDevice()
 {
 	HRESULT hr = S_OK;
-
-	// write and compile & load our shaders
-	hr = myDevice->CreateVertexShader(VertexShader, sizeof(VertexShader), nullptr, &vertexShader);
-	hr = myDevice->CreatePixelShader(PixelShader, sizeof(PixelShader), nullptr, &pixelShader);
-
 	// define input layout
 	D3D11_INPUT_ELEMENT_DESC layout[] =
 	{
@@ -184,74 +141,67 @@ HRESULT Graphics::InitializeDevice()
 		{"NORMAL"  , 0, DXGI_FORMAT_R32G32B32_FLOAT	  , 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0},
 		{"TEXCOORD", 0, DXGI_FORMAT_R32G32_FLOAT	  , 0, D3D11_APPEND_ALIGNED_ELEMENT, D3D11_INPUT_PER_VERTEX_DATA, 0}
 	};
+	// create input layout
 	hr = myDevice->CreateInputLayout(layout, ARRAYSIZE(layout), VertexShader, sizeof(VertexShader), &inputLayout);
 
-	// load data from binary file
-	fileIO.Read("../../My assets/Plane_Data");
-	float scale = 5.0f/*0.005f*/;
-	// fill vertices
-	hub.name = "ArtisansHub";
-	hub.indexCount = fileIO.indexCount;
-	hub.vertexCount = fileIO.vertexCount;
-	hub.indices = new unsigned int[hub.indexCount];
-	hub.vertices = new Vertex[hub.vertexCount];
-	for (size_t i = 0; i < hub.vertexCount; i++)
-	{
-		hub.vertices[i].position.x = fileIO.vertices[i].position[0] * scale;
-		hub.vertices[i].position.y = fileIO.vertices[i].position[1] * scale;
-		hub.vertices[i].position.z = fileIO.vertices[i].position[2] * scale;
-		hub.vertices[i].position.w = 1.0f;
+	// load model data
+	corvette.AddMesh(new Mesh());
+	corvette.GetMeshes()[0]->LoadVertices("../../My assets/Corvette_Data", "Corvette", 0.01f, XMFLOAT4(0.0f, 0.0f, 0.0f, 0.0f));
+	hr = corvette.GetMeshes()[0]->CreateVertexShader(myDevice, VertexShader, sizeof(VertexShader));
+	hr = corvette.GetMeshes()[0]->CreatePixelShader(myDevice, PixelShader, sizeof(PixelShader));
+	hr = corvette.GetMeshes()[0]->CreateVertexBuffer(myDevice);
+	hr = corvette.GetMeshes()[0]->CreateIndexBuffer(myDevice);
+	hr = corvette.GetMeshes()[0]->CreateShaderResourceView(myDevice, L"../../My assets/Textures/Corvette/Corvette_Diffuse_Tex.dds");
+	hr = corvette.GetMeshes()[0]->CreateSamplerState(myDevice);
 
-		hub.vertices[i].texture.x = fileIO.vertices[i].texture[0];
-		hub.vertices[i].texture.y = fileIO.vertices[i].texture[1];
+	arc170.AddMesh(new Mesh());
+	arc170.GetMeshes()[0]->LoadVertices("../../My assets/ARC170_Data", "ARC170", 0.01f, XMFLOAT4(0.0f, 0.0f, 0.0f, 0.0f));
+	hr = arc170.GetMeshes()[0]->CreateVertexShader(myDevice, VertexShader, sizeof(VertexShader));
+	hr = arc170.GetMeshes()[0]->CreatePixelShader(myDevice, PixelShader, sizeof(PixelShader));
+	hr = arc170.GetMeshes()[0]->CreateVertexBuffer(myDevice);
+	hr = arc170.GetMeshes()[0]->CreateIndexBuffer(myDevice);
+	hr = arc170.GetMeshes()[0]->CreateShaderResourceView(myDevice, L"../../My assets/Textures/ARC170_Tex.dds");
+	hr = arc170.GetMeshes()[0]->CreateSamplerState(myDevice);
 
-		hub.vertices[i].normal.x = fileIO.vertices[i].normal[0];
-		hub.vertices[i].normal.y = fileIO.vertices[i].normal[1] + 1.0f;
-		hub.vertices[i].normal.z = fileIO.vertices[i].normal[2];
+	plane.AddMesh(new Mesh());
+	plane.GetMeshes()[0]->LoadVertices("../../My assets/Plane_Data", "Plane", 5.0f, XMFLOAT4(0.0f, 1.0f, 0.0f, 0.0f));
+	hr = plane.GetMeshes()[0]->CreateVertexShader(myDevice, VertexShader, sizeof(VertexShader));
+	hr = plane.GetMeshes()[0]->CreatePixelShader(myDevice, PixelShader, sizeof(PixelShader));
+	hr = plane.GetMeshes()[0]->CreateVertexBuffer(myDevice);
+	hr = plane.GetMeshes()[0]->CreateIndexBuffer(myDevice);
+	hr = plane.GetMeshes()[0]->CreateShaderResourceView(myDevice, L"../../My assets/Textures/Box_Circuit.dds");
+	hr = plane.GetMeshes()[0]->CreateSamplerState(myDevice);
 
-		hub.vertices[i].color = XMFLOAT4(0.3f, 0.3f, 0.3f, 1.0f);
-	}
-	for (size_t i = 0; i < hub.indexCount; i++)
-	{
-		hub.indices[i] = fileIO.indices[i];
-	}
-	meshes.push_back(&hub);
-	// describe vertex data and create vertex buffer
-	hr = CreateBuffer(myDevice, &vertexBuffer, D3D11_BIND_VERTEX_BUFFER, sizeof(Vertex) * hub.vertexCount, hub.vertices);
-	// describe index data and create index buffer
-	hr = CreateBuffer(myDevice, &indexBuffer, D3D11_BIND_INDEX_BUFFER, sizeof(unsigned int) * hub.indexCount, hub.indices);
+	spaceStation.AddMesh(new Mesh());
+	spaceStation.GetMeshes()[0]->LoadVertices("../../My assets/SpaceStation_Data", "SpaceStation", 0.5f, XMFLOAT4(0.0f, 0.0f, 0.0f, 0.0f));
+	hr = spaceStation.GetMeshes()[0]->CreateVertexShader(myDevice, VertexShader, sizeof(VertexShader));
+	hr = spaceStation.GetMeshes()[0]->CreatePixelShader(myDevice, PixelShader, sizeof(PixelShader));
+	hr = spaceStation.GetMeshes()[0]->CreateVertexBuffer(myDevice);
+	hr = spaceStation.GetMeshes()[0]->CreateIndexBuffer(myDevice);
+	hr = spaceStation.GetMeshes()[0]->CreateShaderResourceView(myDevice, L"../../My assets/Textures/SpaceStation01/RT_2D_Station2_Spec.dds");
+	hr = spaceStation.GetMeshes()[0]->CreateSamplerState(myDevice);
+
+	venatorStarDestroyer.AddMesh(new Mesh());
+	venatorStarDestroyer.GetMeshes()[0]->LoadVertices("../../My assets/Venator_Data", "VenatorStarDestroyer", 0.001f, XMFLOAT4(0.0f, 0.0f, 0.0f, 0.0f));
+	hr = venatorStarDestroyer.GetMeshes()[0]->CreateVertexShader(myDevice, VertexShader, sizeof(VertexShader));
+	hr = venatorStarDestroyer.GetMeshes()[0]->CreatePixelShader(myDevice, PixelShader, sizeof(PixelShader));
+	hr = venatorStarDestroyer.GetMeshes()[0]->CreateVertexBuffer(myDevice);
+	hr = venatorStarDestroyer.GetMeshes()[0]->CreateIndexBuffer(myDevice);
+	hr = venatorStarDestroyer.GetMeshes()[0]->CreateShaderResourceView(myDevice, L"../../My assets/Textures/VenatorStarDestroyer/ReV_venator.dds");
+	hr = venatorStarDestroyer.GetMeshes()[0]->CreateSamplerState(myDevice);
+
+
 	// describe constant variables and create constant buffer
 	hr = CreateBuffer(myDevice, &matrix_id3d11buffer, D3D11_BIND_CONSTANT_BUFFER, sizeof(Matrix_ConstantBuffer), nullptr);
 	hr = CreateBuffer(myDevice, &light_id3d11buffer, D3D11_BIND_CONSTANT_BUFFER, sizeof(Light_ConstantBuffer), nullptr);
-	// load texture
-	hr = CreateDDSTextureFromFile(myDevice, L"../../My assets/Textures/Box_Circuit.dds", nullptr, &shaderRV);
-	// create sample
-	D3D11_SAMPLER_DESC sampDesc;
-	ZeroMemory(&sampDesc, sizeof(D3D11_SAMPLER_DESC));
-	sampDesc.Filter = D3D11_FILTER_MIN_MAG_MIP_LINEAR;
-	sampDesc.AddressU = D3D11_TEXTURE_ADDRESS_WRAP;
-	sampDesc.AddressV = D3D11_TEXTURE_ADDRESS_WRAP;
-	sampDesc.AddressW = D3D11_TEXTURE_ADDRESS_WRAP;
-	sampDesc.ComparisonFunc = D3D11_COMPARISON_NEVER;
-	sampDesc.MinLOD = 0;
-	sampDesc.MaxLOD = D3D11_FLOAT32_MAX;
-	hr = myDevice->CreateSamplerState(&sampDesc, &sampler);
 	return hr;
 }
 
 void Graphics::CleanDevice()
 {
+	inputLayout->Release();
 	matrix_id3d11buffer->Release();
 	light_id3d11buffer->Release();
-
-	vertexBuffer->Release();
-	indexBuffer->Release();
-	inputLayout->Release();
-	vertexShader->Release();
-	pixelShader->Release();
-
-	shaderRV->Release();
-	sampler->Release();
 }
 
 HRESULT Graphics::CreateBuffer(ID3D11Device* device, ID3D11Buffer** buffer, UINT bindFlag, UINT byteWidth, const void* pSysMem)
@@ -301,6 +251,7 @@ HRESULT Graphics::CreateBuffer(ID3D11Device* device, ID3D11Buffer** buffer, UINT
 void Graphics::KeyboardHandle(float delta)
 {
 	float offset = 3.5f;
+	offset = 6.0f;
 	// move forward
 	if (GetAsyncKeyState('W')) { camera.MoveZ(offset * delta); }
 	// move left
@@ -321,6 +272,10 @@ void Graphics::KeyboardHandle(float delta)
 	if (GetAsyncKeyState('I')) { camera.Pitch(-offset * delta); }
 	// pitch down
 	if (GetAsyncKeyState('K')) { camera.Pitch(offset * delta); }
+	// roll left
+	if (GetAsyncKeyState('U')) { camera.Roll(offset * delta); }
+	// roll right
+	if (GetAsyncKeyState('O')) { camera.Roll(-offset * delta); }
 	// increase fov
 	if (GetAsyncKeyState('1')) { camera.IncreaseFOV((offset + 25.0f) * delta); }
 	// decrease fov
@@ -335,7 +290,72 @@ void Graphics::KeyboardHandle(float delta)
 	if (GetAsyncKeyState('6')) { camera.DecreaseFarPlane((offset + 10.0f) * delta); }
 	// waviness
 	if (GetAsyncKeyState('F') & 0x1) { wave = !wave; }
+	// black and white
+	if (GetAsyncKeyState('G') & 0x1) { blackWhite = !blackWhite; }
 	// reset camera
 	if (GetAsyncKeyState('R') & 0x1) { camera.SetPosition(0.0f, 0.0f, -20.0f); camera.SetProjection(90.0f, 1.0f, 0.1f, 500.0f); }
 	camera.UpdateView();
+}
+
+void Graphics::ConstantBufferSetUp(const XMMATRIX& worldMatrix)
+{
+	// lighting
+	static float rot = 0.0f; rot += 0.1f;
+	// directional lighting
+	dLight.SetWorldMatrix(XMMatrixRotationY(0.01f));
+	dLight.UpdatePosition();
+	XMStoreFloat4(&light_cb.lightPos[0], dLight.GetPositionVector());
+	XMStoreFloat4(&light_cb.lightNormal[0], dLight.GetNormalVectorNormalized());
+	XMStoreFloat4(&light_cb.lightColor[0], dLight.GetColor());
+	// point light
+	pLight.SetWorldMatrix(XMMatrixRotationY(0.01f));
+	pLight.UpdatePosition();
+	XMStoreFloat4(&light_cb.lightPos[1], pLight.GetPositionVector());
+	XMStoreFloat4(&light_cb.lightNormal[1], pLight.GetNormalVectorNormalized());
+	XMStoreFloat4(&light_cb.lightColor[1], pLight.GetColor());
+	// spot light
+	sLight.SetPosition(radius * 5.0f, 15.0f, radius * 5.0f);
+	sLight.SetWorldMatrix(XMMatrixRotationY(0.01f));
+	sLight.UpdatePosition();
+	XMVECTOR coneRatio = { 0.98f, 0.88f, (float)blackWhite, 0.0f };
+	XMStoreFloat4(&light_cb.coneRatio, coneRatio);
+	XMStoreFloat4(&light_cb.lightPos[2], sLight.GetPositionVector());
+	XMStoreFloat4(&light_cb.lightNormal[2], sLight.GetNormalVectorNormalized());
+	XMStoreFloat4(&light_cb.lightColor[2], sLight.GetColor());
+	// point light radius
+	if (radius > 10.0f)
+		shrink = true;
+	else if (radius <= 1.0f)
+		shrink = false;
+	if (shrink)
+		radius -= 0.03f;
+	else
+		radius += 0.03f;
+	XMVECTOR lightRad = { radius, rot, (float)elapsedTime, (float)wave };
+	XMStoreFloat4(&light_cb.lightRadius, lightRad);
+
+	// world
+	XMStoreFloat4x4(&matrix_cb.world, worldMatrix);
+	// view
+	XMStoreFloat4x4(&matrix_cb.view, camera.GetViewMatrix());
+	// projection
+	float ar = 0.0f;
+	mySurface->GetAspectRatio(ar);
+	camera.SetAspectRatio(ar);
+	XMStoreFloat4x4(&matrix_cb.projection, camera.GetProjectionMatrix());
+	// camera position
+	XMStoreFloat4(&matrix_cb.cameraPosition, camera.GetWorldViewMatrix().r[3]);
+
+	// map constant buffer
+	ID3D11Buffer* constantBuffer[] = { matrix_id3d11buffer, light_id3d11buffer };
+	D3D11_MAPPED_SUBRESOURCE gpuBuffer;
+	myContext->Map(constantBuffer[0], 0, D3D11_MAP_WRITE_DISCARD, 0, &gpuBuffer);
+	memcpy(gpuBuffer.pData, &matrix_cb, sizeof(Matrix_ConstantBuffer));
+	myContext->Unmap(constantBuffer[0], 0);
+	myContext->Map(constantBuffer[1], 0, D3D11_MAP_WRITE_DISCARD, 0, &gpuBuffer);
+	memcpy(gpuBuffer.pData, &light_cb, sizeof(Light_ConstantBuffer));
+	myContext->Unmap(constantBuffer[1], 0);
+	// set constant buffer in memory
+	myContext->VSSetConstantBuffers(0, 2, constantBuffer);
+	myContext->PSSetConstantBuffers(0, 2, constantBuffer);
 }

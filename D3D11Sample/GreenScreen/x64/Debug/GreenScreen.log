@@ -1,4 +1,0 @@
-﻿  Graphics.cpp
-C:\Users\kclou\OneDrive\School Work\Month14_Pro&Port4\P-P4_Graphics2\D3D11Sample\GreenScreen\FBXBinaryFileIO.h(61,1): warning C4267:  '=': conversion from 'size_t' to 'unsigned int', possible loss of data
-C:\Users\kclou\OneDrive\School Work\Month14_Pro&Port4\P-P4_Graphics2\D3D11Sample\GreenScreen\FBXBinaryFileIO.h(65,1): warning C4267:  '=': conversion from 'size_t' to 'unsigned int', possible loss of data
-  GreenScreen.vcxproj -> C:\Users\kclou\OneDrive\School Work\Month14_Pro&Port4\P-P4_Graphics2\D3D11Sample\x64\Debug\GreenScreen.exe
