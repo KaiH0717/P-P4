@@ -49,11 +49,11 @@ float4 main(OutputVertex inputPixel) : SV_TARGET
     spotLightRatio = attenuation * attenuation * spotLightRatio;
     float4 color3 = lerp(float4(0.0f, 0.0f, 0.0f, 1.0f), lightColor[2], spotLightRatio);
     // specular component
-    //float3 viewDir = normalize(cameraPosition - inputPixel.position);
-    //float3 halfVector = normalize(((float3) -lightNor[0]) + viewDir);
-    //float intensity = max(saturate(pow(dot(inputPixel.normal, halfVector), 2.2f)), 0f);
-    //float4 color4 = 
-    inputPixel.color = (color1 + color2 + color3) * txDiffuse.Sample(samLinear, inputPixel.tex);
+    float3 viewDir = normalize(cameraPosition - inputPixel.worldPosition);
+    float3 halfVector = normalize(((float3) -lightNor[0]) + viewDir);
+    float intensity = saturate(pow(dot(inputPixel.normal, halfVector), 4.0f));
+    float4 color4 = lerp(float4(0.0f, 0.0f, 0.0f, 1.0f), lightColor[0], intensity * 2.25f);
+    inputPixel.color = (color1 + color2 + color3 + color4) * txDiffuse.Sample(samLinear, inputPixel.tex);
     if (coneRatio.z == 1.0f)
     {
         float grey = (inputPixel.color.x + inputPixel.color.y + inputPixel.color.z) / 3.0f;

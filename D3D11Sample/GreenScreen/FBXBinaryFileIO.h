@@ -80,7 +80,7 @@ public:
 		if (bfin.is_open())
 		{
 			// read vertex data
-			bfin.read((char*)& vertexCount, sizeof(unsigned int)); // read count
+			bfin.read((char*)& vertexCount, sizeof(unsigned int)); // read vertex count
 			for (unsigned int i = 0; i < vertexCount; i++)
 			{
 				// populate vertex vector
@@ -88,7 +88,7 @@ public:
 				vertices.push_back(vertex);
 			}
 			// read index data
-			bfin.read((char*)& indexCount, sizeof(unsigned int));
+			bfin.read((char*)& indexCount, sizeof(unsigned int)); // read index count
 			for (unsigned int i = 0; i < indexCount; i++)
 			{
 				// populate index vector

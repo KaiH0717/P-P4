@@ -55,6 +55,7 @@ class Graphics
 	ID3D11Buffer* matrix_id3d11buffer;
 	ID3D11Buffer* light_id3d11buffer;
 	ID3D11InputLayout* inputLayout = nullptr;
+	ID3D11InputLayout* inputLayout1 = nullptr;
 	// constant buffers
 	Matrix_ConstantBuffer matrix_cb;
 	Light_ConstantBuffer light_cb;
@@ -71,6 +72,7 @@ class Graphics
 	bool wave;
 	bool blackWhite;
 
+	Model skyBox;
 	Model corvette;
 	Model arc170;
 	Model plane;

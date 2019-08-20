@@ -7,20 +7,15 @@ Camera::Camera()
 	nearPlane = 0.1f;
 	farPlane = 10.0f;
 
-	viewMatrix = XMMatrixLookAtLH(XMVectorSet(0.0f, 0.0f, -1.0f, 0.0f), XMVectorSet(0.0f, 0.0f, 1.0f, 0.0f), XMVectorSet(0.0f, 1.0f, 0.0f, 0.0f));
-	XMStoreFloat4x4(&view, viewMatrix);
-	worldViewMatrix = XMMatrixInverse(nullptr, viewMatrix);
-	XMStoreFloat4x4(&worldView, worldViewMatrix);
-
-	projectionMatrix = XMMatrixIdentity();
-	XMStoreFloat4x4(&projection, projectionMatrix);
+	XMStoreFloat4x4(&view, XMMatrixLookAtLH(XMVectorSet(0.0f, 0.0f, -1.0f, 0.0f), XMVectorSet(0.0f, 0.0f, 1.0f, 0.0f), XMVectorSet(0.0f, 1.0f, 0.0f, 0.0f)));
+	XMStoreFloat4x4(&worldView, XMMatrixInverse(nullptr, XMLoadFloat4x4(&view)));
+	XMStoreFloat4x4(&projection, XMMatrixIdentity());
 }
 
 float Camera::GetFOV() const { return FOV; }
 float Camera::GetAspectRatio() const { return aspectRatio; }
 float Camera::GetNearPlane() const { return nearPlane; }
 float Camera::GetFarPlane() const { return farPlane; }
-const XMMATRIX Camera::GetWorldViewMatrix() const { return XMLoadFloat4x4(&worldView); }
 const XMMATRIX Camera::GetViewMatrix() const { return XMLoadFloat4x4(&view); }
 const XMMATRIX Camera::GetProjectionMatrix() const { return XMLoadFloat4x4(&projection); }
 
@@ -34,15 +29,15 @@ void Camera::SetProjection(float FOV, float aspectRatio, float nearPlane, float 
 	this->aspectRatio = aspectRatio + 0.0001f;
 	this->nearPlane = nearPlane;
 	this->farPlane = farPlane;
-	projectionMatrix = XMMatrixPerspectiveFovLH(XMConvertToRadians(this->FOV), this->aspectRatio, this->nearPlane, this->farPlane);
+	XMMATRIX projectionMatrix = XMMatrixPerspectiveFovLH(XMConvertToRadians(this->FOV), this->aspectRatio, this->nearPlane, this->farPlane);
 	XMStoreFloat4x4(&projection, projectionMatrix);
 }
 
 void Camera::SetPosition(float x, float y, float z)
 {
-	viewMatrix = XMMatrixLookAtLH(XMVectorSet(x, y, z, 0.0f), XMVectorSet(0.0f, 0.0f, 1.0f, 0.0f), XMVectorSet(0.0f, 1.0f, 0.0f, 0.0f));
+	XMMATRIX viewMatrix = XMMatrixLookAtLH(XMVectorSet(x, y, z, 0.0f), XMVectorSet(0.0f, 0.0f, 1.0f, 0.0f), XMVectorSet(0.0f, 1.0f, 0.0f, 0.0f));
 	XMStoreFloat4x4(&view, viewMatrix);
-	worldViewMatrix = XMMatrixInverse(nullptr, viewMatrix);
+	XMMATRIX worldViewMatrix = XMMatrixInverse(nullptr, viewMatrix);
 	XMStoreFloat4x4(&worldView, worldViewMatrix);
 }
 
@@ -92,28 +87,28 @@ void Camera::DecreaseFarPlane(float offset)
 
 void Camera::UpdateView()
 {
-	viewMatrix = XMMatrixInverse(nullptr, worldViewMatrix);
+	XMMATRIX viewMatrix = XMMatrixInverse(nullptr, XMLoadFloat4x4(&worldView));
 	XMStoreFloat4x4(&view, viewMatrix);
 }
 
 void Camera::MoveX(float offset)
 {
 	XMMATRIX translation = XMMatrixTranslation(offset, 0.0f, 0.0f);
-	worldViewMatrix = XMMatrixMultiply(translation, worldViewMatrix);
+	XMMATRIX worldViewMatrix = XMMatrixMultiply(translation, XMLoadFloat4x4(&worldView));
 	XMStoreFloat4x4(&worldView, worldViewMatrix);
 }
 
 void Camera::MoveY(float offset)
 {
 	XMMATRIX translation = XMMatrixTranslation(0.0f, offset, 0.0f);
-	worldViewMatrix = XMMatrixMultiply(worldViewMatrix, translation);
+	XMMATRIX worldViewMatrix = XMMatrixMultiply(XMLoadFloat4x4(&worldView), translation);
 	XMStoreFloat4x4(&worldView, worldViewMatrix);
 }
 
 void Camera::MoveZ(float offset)
 {
 	XMMATRIX translation = XMMatrixTranslation(0.0f, 0.0f, offset);
-	worldViewMatrix = XMMatrixMultiply(translation, worldViewMatrix);
+	XMMATRIX worldViewMatrix = XMMatrixMultiply(translation, XMLoadFloat4x4(&worldView));
 	XMStoreFloat4x4(&worldView, worldViewMatrix);
 }
 
@@ -121,7 +116,7 @@ void Camera::Pitch(float degrees)
 {
 	// local rotation
 	XMMATRIX rotation = XMMatrixRotationX(degrees);
-	worldViewMatrix = XMMatrixMultiply(rotation, worldViewMatrix);
+	XMMATRIX worldViewMatrix = XMMatrixMultiply(rotation, XMLoadFloat4x4(&worldView));
 	XMStoreFloat4x4(&worldView, worldViewMatrix);
 }
 
@@ -129,16 +124,17 @@ void Camera::Yaw(float degrees)
 {
 	// global rotation
 	XMMATRIX rotation = XMMatrixRotationY(degrees);
+	XMMATRIX worldViewMatrix = XMLoadFloat4x4(&worldView);
 	XMVECTOR originalPos = worldViewMatrix.r[3];
 	worldViewMatrix.r[3] = XMVectorSet(0.0f, 0.0f, 0.0f, 1.0f);
 	worldViewMatrix = XMMatrixMultiply(worldViewMatrix, rotation);
-	XMStoreFloat4x4(&worldView, worldViewMatrix);
 	worldViewMatrix.r[3] = originalPos;
+	XMStoreFloat4x4(&worldView, worldViewMatrix);
 }
 
 void Camera::Roll(float degrees)
 {
 	XMMATRIX rotation = XMMatrixRotationZ(degrees);
-	worldViewMatrix = XMMatrixMultiply(rotation, worldViewMatrix);
+	XMMATRIX worldViewMatrix = XMMatrixMultiply(rotation, XMLoadFloat4x4(&worldView));
 	XMStoreFloat4x4(&worldView, worldViewMatrix);
 }

@@ -11,7 +11,8 @@ private:
 	std::vector<Mesh*> meshes;
 	// Model's position relative to the world
 	XMFLOAT4X4 world;
-	XMMATRIX worldMatrix;
+private:
+	void SetPipeline(ID3D11DeviceContext* context, unsigned int index);
 public:
 	Model();
 	~Model();

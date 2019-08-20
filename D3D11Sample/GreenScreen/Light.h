@@ -11,11 +11,6 @@ private:
 	XMFLOAT4 normal;
 	XMFLOAT4 color;
 	XMFLOAT4X4 world;
-	// speed type
-	XMVECTOR positionVector;
-	XMVECTOR normalVector;
-	XMVECTOR colorVector;
-	XMMATRIX worldMatrix;
 public:
 	Light();
 	Light(const XMVECTOR& position, const XMVECTOR& normal, const XMVECTOR& color, const XMMATRIX& world);

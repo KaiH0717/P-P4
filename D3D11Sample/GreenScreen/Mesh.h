@@ -52,12 +52,13 @@ struct Mesh
 	//////////////////////////////
 	// clean up all the resource and heap memory
 	//////////////////////////////
+	Mesh(char* name, float scale);
 	~Mesh();
 
 	//////////////////////////////
 	// load in vertices
 	//////////////////////////////
-	void LoadVertices(const char* fileName,char* meshName, float scale, XMFLOAT4 normalOffset);
+	void LoadVertices(const char* fileName, XMFLOAT4 normalOffset);
 
 	//////////////////////////////
 	// resource initailization
@@ -70,6 +71,12 @@ struct Mesh
 	HRESULT CreateShaderResourceView(ID3D11Device* device, const wchar_t* fileName);
 	HRESULT CreateSamplerState(ID3D11Device* device);
 };
+
+inline Mesh::Mesh(char* name, float scale)
+{
+	this->name = name;
+	this->scale = scale;
+}
 
 inline Mesh::~Mesh()
 {
@@ -90,12 +97,10 @@ inline Mesh::~Mesh()
 	if (sampler) { sampler->Release(); sampler = nullptr; }
 }
 
-inline void Mesh::LoadVertices(const char* fileName,char* meshName, float scale, XMFLOAT4 normalOffset)
+inline void Mesh::LoadVertices(const char* fileName, XMFLOAT4 normalOffset)
 {
 	FBXBinaryFileIO fileIO;
 	fileIO.Read(fileName);
-	this->name = meshName;
-	this->scale = scale;
 	this->indexCount = fileIO.indexCount;
 	this->vertexCount = fileIO.vertexCount;
 	this->indices = new unsigned int[this->indexCount];

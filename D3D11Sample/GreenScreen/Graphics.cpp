@@ -4,6 +4,9 @@
 #include "VertexShader.csh"
 #include "PixelShader.csh"
 
+#include "SkyboxVertexShader.csh"
+#include "SkyboxPixelShader.csh"
+
 #define RAND_COLOR XMFLOAT4(rand()/float(RAND_MAX),rand()/float(RAND_MAX),rand()/float(RAND_MAX),1.0f)
 
 Graphics::Graphics(GW::SYSTEM::GWindow* attatchPoint)
@@ -20,7 +23,7 @@ Graphics::Graphics(GW::SYSTEM::GWindow* attatchPoint)
 
 			// Initalize device
 			HRESULT hr = InitializeDevice();
-			camera.SetPosition(0.0f, 5.0f, -20.0f);
+			camera.SetPosition(0.0f, 20.0f, -20.0f);
 			camera.SetProjection(90.0f, 1.0f, 0.1f, 500.0f);
 			// directional light init
 			dLight.SetPosition(0.0f, 0.0f, 0.0f);
@@ -83,19 +86,28 @@ void Graphics::Render()
 			const float bg_Color[] = { 0.4f, 0.4f, 0.4f, 1.0f };
 			myContext->ClearRenderTargetView(myRenderTargetView, bg_Color);
 
+			
+
+
 			// keyboard inputs
 			time.Signal();
 			elapsedTime += time.Delta();
 			KeyboardHandle((float)time.SmoothDelta());
 
 			// setup pipeline
-			UINT strides = sizeof(Vertex);
-			UINT offsets = 0;
-			myContext->IASetInputLayout(inputLayout);
+			myContext->IASetInputLayout(inputLayout1);
 			myContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
 			// draw
-			XMMATRIX temp = XMMatrixMultiply(XMMatrixRotationY(-160.0f * 0.01f), XMMatrixTranslation(50.0f, 0.0f, 0.0f));
+			XMMATRIX temp = XMMatrixIdentity();
+			skyBox.SetWorldMatrix(temp);
+			ConstantBufferSetUp(skyBox.GetWorldMatrix());
+			skyBox.Draw(myContext);
+			
+			myContext->IASetInputLayout(inputLayout);
+			myContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
+
+			temp = XMMatrixMultiply(XMMatrixRotationY(-160.0f * 0.01f), XMMatrixTranslation(50.0f, 0.0f, 0.0f));
 			corvette.SetWorldMatrix(temp);
 			ConstantBufferSetUp(corvette.GetWorldMatrix());
 			corvette.Draw(myContext);
@@ -116,7 +128,7 @@ void Graphics::Render()
 			//ConstantBufferSetUp(spaceStation.GetWorldMatrix());
 			//spaceStation.Draw(myContext);
 
-			temp = XMMatrixMultiply(XMMatrixRotationX(30.0f /** venatorStarDestroyer.GetMeshes()[0]->scale*/), XMMatrixTranslation(0.0f, 1.9f, 0.0f));
+			temp = XMMatrixMultiply(XMMatrixRotationX(30.0f), XMMatrixTranslation(0.0f, 0.0f, 0.0f));
 			venatorStarDestroyer.SetWorldMatrix(temp);
 			ConstantBufferSetUp(venatorStarDestroyer.GetWorldMatrix());
 			venatorStarDestroyer.Draw(myContext);
@@ -143,10 +155,20 @@ HRESULT Graphics::InitializeDevice()
 	};
 	// create input layout
 	hr = myDevice->CreateInputLayout(layout, ARRAYSIZE(layout), VertexShader, sizeof(VertexShader), &inputLayout);
+	hr = myDevice->CreateInputLayout(layout, ARRAYSIZE(layout), SkyboxVertexShader, sizeof(SkyboxVertexShader), &inputLayout1);
 
 	// load model data
-	corvette.AddMesh(new Mesh());
-	corvette.GetMeshes()[0]->LoadVertices("../../My assets/Corvette_Data", "Corvette", 0.01f, XMFLOAT4(0.0f, 0.0f, 0.0f, 0.0f));
+	skyBox.AddMesh(new Mesh("SkyBox", -10.0f));
+	skyBox.GetMeshes()[0]->LoadVertices("../../My assets/SkyBox_Data", XMFLOAT4(0.0f, 0.0f, 0.0f, 0.0f));
+	hr = skyBox.GetMeshes()[0]->CreateVertexShader(myDevice, SkyboxVertexShader, sizeof(SkyboxVertexShader));
+	hr = skyBox.GetMeshes()[0]->CreatePixelShader(myDevice, SkyboxPixelShader, sizeof(SkyboxPixelShader));
+	hr = skyBox.GetMeshes()[0]->CreateVertexBuffer(myDevice);
+	hr = skyBox.GetMeshes()[0]->CreateIndexBuffer(myDevice);
+	hr = skyBox.GetMeshes()[0]->CreateShaderResourceView(myDevice, L"../../My assets/Textures/bkg1_bot.dds");
+	hr = skyBox.GetMeshes()[0]->CreateSamplerState(myDevice);
+
+	corvette.AddMesh(new Mesh("Corvette", 0.01f));
+	corvette.GetMeshes()[0]->LoadVertices("../../My assets/Corvette_Data", XMFLOAT4(0.0f, 0.0f, 0.0f, 0.0f));
 	hr = corvette.GetMeshes()[0]->CreateVertexShader(myDevice, VertexShader, sizeof(VertexShader));
 	hr = corvette.GetMeshes()[0]->CreatePixelShader(myDevice, PixelShader, sizeof(PixelShader));
 	hr = corvette.GetMeshes()[0]->CreateVertexBuffer(myDevice);
@@ -154,8 +176,8 @@ HRESULT Graphics::InitializeDevice()
 	hr = corvette.GetMeshes()[0]->CreateShaderResourceView(myDevice, L"../../My assets/Textures/Corvette/Corvette_Diffuse_Tex.dds");
 	hr = corvette.GetMeshes()[0]->CreateSamplerState(myDevice);
 
-	arc170.AddMesh(new Mesh());
-	arc170.GetMeshes()[0]->LoadVertices("../../My assets/ARC170_Data", "ARC170", 0.01f, XMFLOAT4(0.0f, 0.0f, 0.0f, 0.0f));
+	arc170.AddMesh(new Mesh("ARC170", 0.005f));
+	arc170.GetMeshes()[0]->LoadVertices("../../My assets/ARC170_Data", XMFLOAT4(0.0f, 0.0f, 0.0f, 0.0f));
 	hr = arc170.GetMeshes()[0]->CreateVertexShader(myDevice, VertexShader, sizeof(VertexShader));
 	hr = arc170.GetMeshes()[0]->CreatePixelShader(myDevice, PixelShader, sizeof(PixelShader));
 	hr = arc170.GetMeshes()[0]->CreateVertexBuffer(myDevice);
@@ -163,8 +185,8 @@ HRESULT Graphics::InitializeDevice()
 	hr = arc170.GetMeshes()[0]->CreateShaderResourceView(myDevice, L"../../My assets/Textures/ARC170_Tex.dds");
 	hr = arc170.GetMeshes()[0]->CreateSamplerState(myDevice);
 
-	plane.AddMesh(new Mesh());
-	plane.GetMeshes()[0]->LoadVertices("../../My assets/Plane_Data", "Plane", 5.0f, XMFLOAT4(0.0f, 1.0f, 0.0f, 0.0f));
+	plane.AddMesh(new Mesh("Plane", 5.0f));
+	plane.GetMeshes()[0]->LoadVertices("../../My assets/Plane_Data", XMFLOAT4(0.0f, 1.0f, 0.0f, 0.0f));
 	hr = plane.GetMeshes()[0]->CreateVertexShader(myDevice, VertexShader, sizeof(VertexShader));
 	hr = plane.GetMeshes()[0]->CreatePixelShader(myDevice, PixelShader, sizeof(PixelShader));
 	hr = plane.GetMeshes()[0]->CreateVertexBuffer(myDevice);
@@ -172,8 +194,8 @@ HRESULT Graphics::InitializeDevice()
 	hr = plane.GetMeshes()[0]->CreateShaderResourceView(myDevice, L"../../My assets/Textures/Box_Circuit.dds");
 	hr = plane.GetMeshes()[0]->CreateSamplerState(myDevice);
 
-	spaceStation.AddMesh(new Mesh());
-	spaceStation.GetMeshes()[0]->LoadVertices("../../My assets/SpaceStation_Data", "SpaceStation", 0.5f, XMFLOAT4(0.0f, 0.0f, 0.0f, 0.0f));
+	spaceStation.AddMesh(new Mesh("SpaceStation", 0.5f));
+	spaceStation.GetMeshes()[0]->LoadVertices("../../My assets/SpaceStation_Data", XMFLOAT4(0.0f, 0.0f, 0.0f, 0.0f));
 	hr = spaceStation.GetMeshes()[0]->CreateVertexShader(myDevice, VertexShader, sizeof(VertexShader));
 	hr = spaceStation.GetMeshes()[0]->CreatePixelShader(myDevice, PixelShader, sizeof(PixelShader));
 	hr = spaceStation.GetMeshes()[0]->CreateVertexBuffer(myDevice);
@@ -181,8 +203,8 @@ HRESULT Graphics::InitializeDevice()
 	hr = spaceStation.GetMeshes()[0]->CreateShaderResourceView(myDevice, L"../../My assets/Textures/SpaceStation01/RT_2D_Station2_Spec.dds");
 	hr = spaceStation.GetMeshes()[0]->CreateSamplerState(myDevice);
 
-	venatorStarDestroyer.AddMesh(new Mesh());
-	venatorStarDestroyer.GetMeshes()[0]->LoadVertices("../../My assets/Venator_Data", "VenatorStarDestroyer", 0.001f, XMFLOAT4(0.0f, 0.0f, 0.0f, 0.0f));
+	venatorStarDestroyer.AddMesh(new Mesh("VenatorStarDestroyer", 0.003f));
+	venatorStarDestroyer.GetMeshes()[0]->LoadVertices("../../My assets/Venator_Data", XMFLOAT4(0.0f, 0.0f, 0.0f, 0.0f));
 	hr = venatorStarDestroyer.GetMeshes()[0]->CreateVertexShader(myDevice, VertexShader, sizeof(VertexShader));
 	hr = venatorStarDestroyer.GetMeshes()[0]->CreatePixelShader(myDevice, PixelShader, sizeof(PixelShader));
 	hr = venatorStarDestroyer.GetMeshes()[0]->CreateVertexBuffer(myDevice);
@@ -200,6 +222,7 @@ HRESULT Graphics::InitializeDevice()
 void Graphics::CleanDevice()
 {
 	inputLayout->Release();
+	inputLayout1->Release();
 	matrix_id3d11buffer->Release();
 	light_id3d11buffer->Release();
 }
@@ -251,7 +274,8 @@ HRESULT Graphics::CreateBuffer(ID3D11Device* device, ID3D11Buffer** buffer, UINT
 void Graphics::KeyboardHandle(float delta)
 {
 	float offset = 3.5f;
-	offset = 6.0f;
+	float rotationSpeed = 0.35f;
+	offset = 10.0f;
 	// move forward
 	if (GetAsyncKeyState('W')) { camera.MoveZ(offset * delta); }
 	// move left
@@ -265,17 +289,17 @@ void Graphics::KeyboardHandle(float delta)
 	// move down
 	if (GetAsyncKeyState('E')) { camera.MoveY(-offset * delta); }
 	// yaw left
-	if (GetAsyncKeyState('J')) { camera.Yaw(-offset * delta); }
+	if (GetAsyncKeyState('J')) { camera.Yaw(-offset * delta * rotationSpeed); }
 	// yaw right
-	if (GetAsyncKeyState('L')) { camera.Yaw(offset * delta); }
+	if (GetAsyncKeyState('L')) { camera.Yaw(offset * delta * rotationSpeed); }
 	// pitch up
-	if (GetAsyncKeyState('I')) { camera.Pitch(-offset * delta); }
+	if (GetAsyncKeyState('I')) { camera.Pitch(-offset * delta * rotationSpeed); }
 	// pitch down
-	if (GetAsyncKeyState('K')) { camera.Pitch(offset * delta); }
+	if (GetAsyncKeyState('K')) { camera.Pitch(offset * delta * rotationSpeed); }
 	// roll left
-	if (GetAsyncKeyState('U')) { camera.Roll(offset * delta); }
+	if (GetAsyncKeyState('U')) { camera.Roll(offset * delta * rotationSpeed); }
 	// roll right
-	if (GetAsyncKeyState('O')) { camera.Roll(-offset * delta); }
+	if (GetAsyncKeyState('O')) { camera.Roll(-offset * delta * rotationSpeed); }
 	// increase fov
 	if (GetAsyncKeyState('1')) { camera.IncreaseFOV((offset + 25.0f) * delta); }
 	// decrease fov
@@ -293,7 +317,7 @@ void Graphics::KeyboardHandle(float delta)
 	// black and white
 	if (GetAsyncKeyState('G') & 0x1) { blackWhite = !blackWhite; }
 	// reset camera
-	if (GetAsyncKeyState('R') & 0x1) { camera.SetPosition(0.0f, 0.0f, -20.0f); camera.SetProjection(90.0f, 1.0f, 0.1f, 500.0f); }
+	if (GetAsyncKeyState('R') & 0x1) { camera.SetPosition(0.0f, 20.0f, -20.0f); camera.SetProjection(90.0f, 1.0f, 0.1f, 500.0f); }
 	camera.UpdateView();
 }
 
@@ -302,7 +326,8 @@ void Graphics::ConstantBufferSetUp(const XMMATRIX& worldMatrix)
 	// lighting
 	static float rot = 0.0f; rot += 0.1f;
 	// directional lighting
-	dLight.SetWorldMatrix(XMMatrixRotationY(0.01f));
+	//dLight.SetWorldMatrix(XMMatrixRotationY(0.01f));
+	dLight.SetWorldMatrix(XMMatrixIdentity());
 	dLight.UpdatePosition();
 	XMStoreFloat4(&light_cb.lightPos[0], dLight.GetPositionVector());
 	XMStoreFloat4(&light_cb.lightNormal[0], dLight.GetNormalVectorNormalized());
@@ -344,7 +369,7 @@ void Graphics::ConstantBufferSetUp(const XMMATRIX& worldMatrix)
 	camera.SetAspectRatio(ar);
 	XMStoreFloat4x4(&matrix_cb.projection, camera.GetProjectionMatrix());
 	// camera position
-	XMStoreFloat4(&matrix_cb.cameraPosition, camera.GetWorldViewMatrix().r[3]);
+	XMStoreFloat4(&matrix_cb.cameraPosition, XMMatrixInverse(nullptr, camera.GetViewMatrix()).r[3]);
 
 	// map constant buffer
 	ID3D11Buffer* constantBuffer[] = { matrix_id3d11buffer, light_id3d11buffer };
