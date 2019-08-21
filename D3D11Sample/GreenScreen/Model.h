@@ -33,11 +33,9 @@ public:
 	void AddMesh(Mesh* mesh);
 
 	//////////////////////////////
-	// draw all meshes
+	// draw calls
 	//////////////////////////////
-	void Draw(ID3D11DeviceContext* context);
-	//////////////////////////////
-	// draw a mesh on a specified index
-	//////////////////////////////
-	void Draw(ID3D11DeviceContext* context, unsigned int index);
+	void Draw(ID3D11DeviceContext* context, D3D11_VIEWPORT* viewPort);
+	void Draw(ID3D11DeviceContext* context, unsigned int index, D3D11_VIEWPORT* viewPort);
+	void DrawInstanced(ID3D11DeviceContext* context, D3D11_VIEWPORT* viewPort, unsigned int numberOfInstance);
 };

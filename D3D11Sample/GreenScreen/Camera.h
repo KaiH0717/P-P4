@@ -27,6 +27,8 @@ public:
 	float GetFarPlane() const;
 	const XMMATRIX GetViewMatrix() const;
 	const XMMATRIX GetProjectionMatrix() const;
+	const XMFLOAT4 GetWorldPosition() const;
+	const XMFLOAT4 GetLocalPosition() const;
 
 	////////////////////////////////////////
 	// projection matrix setters
@@ -62,4 +64,5 @@ public:
 	void Pitch(float degrees);
 	void Yaw(float degrees);
 	void Roll(float degrees);
+	//void LookAt(const XMVECTOR& position);
 };

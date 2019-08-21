@@ -1,4 +1,5 @@
-Texture2D txDiffuse : register(t0);
+TextureCube txDiffuse : register(t0);
+
 SamplerState samLinear : register(s0);
 
 struct OutputVertex
@@ -33,14 +34,12 @@ cbuffer Light_ConstantBuffer : register(b1)
 
 float4 main(OutputVertex inputPixel) : SV_TARGET
 {
-    inputPixel.color = txDiffuse.Sample(samLinear, inputPixel.tex);
+    inputPixel.color = txDiffuse.Sample(samLinear, (float3) inputPixel.localPosition);
     
     if (coneRatio.z == 1.0f)
     {
         float grey = (inputPixel.color.x + inputPixel.color.y + inputPixel.color.z) / 3.0f;
         inputPixel.color = float4(grey, grey, grey, 1.0f);
     }
-    inputPixel.tex.x += sin(inputPixel.tex.y * 0.1f + lightRadius.z) * lightRadius.w;
-    inputPixel.tex.y += cos(inputPixel.tex.x * 0.1f + lightRadius.z) * lightRadius.w;
     return inputPixel.color;
 }

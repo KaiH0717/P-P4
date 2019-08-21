@@ -14,11 +14,11 @@ class FBXBinaryFileIO
 public:
 	std::vector<unsigned int> indices;
 	std::vector<PER_VERTEX_DATA> vertices;
-	unsigned int index;
+	unsigned int index = 0;
 	PER_VERTEX_DATA vertex;
 
-	unsigned int vertexCount;
-	unsigned int indexCount;
+	unsigned int vertexCount = 0;
+	unsigned int indexCount = 0;
 public:
 	////////////////////////////////////////
 	// Setter functions

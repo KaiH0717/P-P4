@@ -46,6 +46,7 @@ struct Mesh
 	//////////////////////////////
 	// textures
 	//////////////////////////////
+	std::vector<ID3D11ShaderResourceView*> shaderRVVectors;
 	ID3D11ShaderResourceView* shaderRV = nullptr;
 	ID3D11SamplerState* sampler = nullptr;
 
@@ -189,7 +190,9 @@ inline HRESULT Mesh::CreateShaderResourceView(ID3D11Device* device, const wchar_
 {
 	if (device)
 	{
-		return CreateDDSTextureFromFile(device, fileName, nullptr, &this->shaderRV);
+		HRESULT hr = CreateDDSTextureFromFile(device, fileName, nullptr, &this->shaderRV);
+		shaderRVVectors.push_back(this->shaderRV);
+		return hr;
 	}
 	return E_INVALIDARG;
 }

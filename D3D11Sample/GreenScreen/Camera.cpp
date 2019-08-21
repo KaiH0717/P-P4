@@ -18,6 +18,8 @@ float Camera::GetNearPlane() const { return nearPlane; }
 float Camera::GetFarPlane() const { return farPlane; }
 const XMMATRIX Camera::GetViewMatrix() const { return XMLoadFloat4x4(&view); }
 const XMMATRIX Camera::GetProjectionMatrix() const { return XMLoadFloat4x4(&projection); }
+const XMFLOAT4 Camera::GetWorldPosition() const { return XMFLOAT4(worldView._41, worldView._42, worldView._43, 1.0f); }
+const XMFLOAT4 Camera::GetLocalPosition() const { return XMFLOAT4(view._41, view._42, view._43, 1.0f); }
 
 void Camera::SetFOV(float fov) { this->FOV = fov; SetProjection(this->FOV, this->aspectRatio, this->nearPlane, this->farPlane); }
 void Camera::SetAspectRatio(float aspectRatio) { this->aspectRatio = aspectRatio + 0.0001f; SetProjection(this->FOV, this->aspectRatio, this->nearPlane, this->farPlane); }

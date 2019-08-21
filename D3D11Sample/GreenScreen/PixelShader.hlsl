@@ -12,7 +12,7 @@ struct OutputVertex
 
 cbuffer Matrix_ConstantBuffer : register(b0)
 {
-    float4x4 world;
+    float4x4 world[5];
     float4x4 view;
     float4x4 projection;
     float4 cameraPosition;
@@ -51,8 +51,8 @@ float4 main(OutputVertex inputPixel) : SV_TARGET
     // specular component
     float3 viewDir = normalize(cameraPosition - inputPixel.worldPosition);
     float3 halfVector = normalize(((float3) -lightNor[0]) + viewDir);
-    float intensity = saturate(pow(dot(inputPixel.normal, halfVector), 4.0f));
-    float4 color4 = lerp(float4(0.0f, 0.0f, 0.0f, 1.0f), lightColor[0], intensity * 2.25f);
+    float intensity = saturate(pow(dot(inputPixel.normal, halfVector), 2.2f));
+    float4 color4 = lerp(float4(0.0f, 0.0f, 0.0f, 1.0f), lightColor[0], intensity * 1.25f);
     inputPixel.color = (color1 + color2 + color3 + color4) * txDiffuse.Sample(samLinear, inputPixel.tex);
     if (coneRatio.z == 1.0f)
     {

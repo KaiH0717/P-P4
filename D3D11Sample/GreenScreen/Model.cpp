@@ -42,23 +42,38 @@ void Model::AddMesh(Mesh* mesh)
 	}
 }
 
-void Model::Draw(ID3D11DeviceContext* context)
+void Model::Draw(ID3D11DeviceContext* context, D3D11_VIEWPORT* viewPort)
 {
 	if (context)
 	{
 		for (size_t i = 0; i < meshes.size(); i++)
 		{
 			SetPipeline(context, i);
+			context->RSSetViewports(1, viewPort);
 			context->DrawIndexed(meshes[i]->indexCount, 0, 0);
 		}
 	}
 }
 
-void Model::Draw(ID3D11DeviceContext* context, unsigned int index)
+void Model::Draw(ID3D11DeviceContext* context, unsigned int index, D3D11_VIEWPORT* viewPort)
 {
 	if (context && (index >= 0 && index < meshes.size()))
 	{
 		SetPipeline(context, index);
+		context->RSSetViewports(1, viewPort);
 		context->DrawIndexed(meshes[index]->vertexCount, 0, 0);
+	}
+}
+
+void Model::DrawInstanced(ID3D11DeviceContext* context, D3D11_VIEWPORT* viewPort, unsigned int numberOfInstance)
+{
+	if (context)
+	{
+		for (size_t i = 0; i < meshes.size(); i++)
+		{
+			SetPipeline(context, i);
+			context->RSSetViewports(1, viewPort);
+			context->DrawIndexedInstanced(meshes[i]->indexCount, numberOfInstance, 0, 0, 0);
+		}
 	}
 }

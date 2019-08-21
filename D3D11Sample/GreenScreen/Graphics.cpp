@@ -3,9 +3,10 @@
 // shader includes
 #include "VertexShader.csh"
 #include "PixelShader.csh"
-
 #include "SkyboxVertexShader.csh"
 #include "SkyboxPixelShader.csh"
+#include "HyperSpeedVertexShader.csh"
+#include "HyperSpeedPixelShader.csh"
 
 #define RAND_COLOR XMFLOAT4(rand()/float(RAND_MAX),rand()/float(RAND_MAX),rand()/float(RAND_MAX),1.0f)
 
@@ -25,22 +26,25 @@ Graphics::Graphics(GW::SYSTEM::GWindow* attatchPoint)
 			HRESULT hr = InitializeDevice();
 			camera.SetPosition(0.0f, 20.0f, -20.0f);
 			camera.SetProjection(90.0f, 1.0f, 0.1f, 500.0f);
+
+			camera1.SetPosition(0.0f, 50.0f, -50.0f);
+			camera1.SetProjection(90.0f, 1.0f, 0.1f, 500.0f);
 			// directional light init
 			dLight.SetPosition(0.0f, 0.0f, 0.0f);
 			dLight.SetNormal(-0.577f, -0.577f, 0.577f);
-			dLight.SetColor(0.75f, 0.75f, 0.94f, 1.0f);
+			dLight.SetColor(0.45f, 0.45f, 0.64f, 1.0f);
 			// point light init
 			pLight.SetPosition(0.0f, 5.0f, 0.0f);
 			pLight.SetNormal(0.0f, 0.0f, 0.0f);
 			pLight.SetColor(1.0f, 0.0f, 0.0f, 1.0f);
 			// spot light init
-			sLight.SetPosition(0.0f, 50.0f, 0.0f);
+			sLight.SetPosition(0.0f, 0.0f, 0.0f);
 			sLight.SetNormal(-0.577f, -0.577f, 0.577f);
 			sLight.SetColor(0.541f, 0.168f, 0.886f, 1.0f);
 
 			time.Restart();
 			elapsedTime = 0.0;
-			wave = false;
+			wave = true;
 			blackWhite = false;
 		}
 	}
@@ -63,7 +67,7 @@ Graphics::~Graphics()
 	}
 }
 
-void Graphics::Render()
+void Graphics::Render(GW::SYSTEM::GWindow* attatchPoint)
 {
 	if (mySurface) // valid?
 	{
@@ -86,8 +90,23 @@ void Graphics::Render()
 			const float bg_Color[] = { 0.4f, 0.4f, 0.4f, 1.0f };
 			myContext->ClearRenderTargetView(myRenderTargetView, bg_Color);
 
-			
+			// viewport stuff
+			D3D11_VIEWPORT viewPort[2];
+			attatchPoint->GetClientWidth(wndWidth);
+			attatchPoint->GetClientHeight(wndHeight);
+			viewPort[0].Width = (FLOAT)wndWidth;
+			viewPort[0].Height = (FLOAT)wndHeight;
+			viewPort[0].MinDepth = 0.0f;
+			viewPort[0].MaxDepth = 1.0f;
+			viewPort[0].TopLeftX = 0;
+			viewPort[0].TopLeftY = 0;
 
+			viewPort[1].Width = 300.0f;
+			viewPort[1].Height = 300.0f;
+			viewPort[1].MinDepth = 0.0f;
+			viewPort[1].MaxDepth = 0.9f;
+			viewPort[1].TopLeftX = 0;
+			viewPort[1].TopLeftY = 0;
 
 			// keyboard inputs
 			time.Signal();
@@ -95,47 +114,75 @@ void Graphics::Render()
 			KeyboardHandle((float)time.SmoothDelta());
 
 			// setup pipeline
-			myContext->IASetInputLayout(inputLayout1);
+			myContext->IASetInputLayout(inputLayout);
 			myContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 
 			// draw
 			XMMATRIX temp = XMMatrixIdentity();
-			skyBox.SetWorldMatrix(temp);
-			ConstantBufferSetUp(skyBox.GetWorldMatrix());
-			skyBox.Draw(myContext);
+			skyBox.SetWorldMatrix(XMMatrixTranslation(camera.GetWorldPosition().x, camera.GetWorldPosition().y, camera.GetWorldPosition().z));
+			ConstantBufferSetUp(skyBox.GetWorldMatrix(), camera);
+			skyBox.Draw(myContext, &viewPort[0]);
 			
-			myContext->IASetInputLayout(inputLayout);
-			myContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
-
 			temp = XMMatrixMultiply(XMMatrixRotationY(-160.0f * 0.01f), XMMatrixTranslation(50.0f, 0.0f, 0.0f));
 			corvette.SetWorldMatrix(temp);
-			ConstantBufferSetUp(corvette.GetWorldMatrix());
-			corvette.Draw(myContext);
+			ConstantBufferSetUp(corvette.GetWorldMatrix(), camera);
+			corvette.Draw(myContext, &viewPort[0]);
 
-			//temp = XMMatrixMultiply(XMMatrixTranslation(-20.0f, -20.0f, 0.0f), XMMatrixRotationAxis(XMVectorSet(1.0f, 1.0f, 0.0f, 0.0f), 90.0f));
 			temp = XMMatrixTranslation(-50.0f, 0.0f, 0.0f);
 			arc170.SetWorldMatrix(temp);
-			ConstantBufferSetUp(arc170.GetWorldMatrix());
-			arc170.Draw(myContext);
+			ConstantBufferSetUp(arc170.GetWorldMatrix(), camera);
+			arc170.Draw(myContext, &viewPort[0]);
 
 			temp = XMMatrixTranslation(0.0f, 0.0f, 0.0f);
 			plane.SetWorldMatrix(temp);
-			ConstantBufferSetUp(plane.GetWorldMatrix());
-			plane.Draw(myContext);
+			ConstantBufferSetUp(plane.GetWorldMatrix(), camera);
+			plane.Draw(myContext, &viewPort[0]);
 
-			//temp = XMMatrixRotationY(elapsedTime);
-			//spaceStation.SetWorldMatrix(temp);
-			//ConstantBufferSetUp(spaceStation.GetWorldMatrix());
-			//spaceStation.Draw(myContext);
+			temp = XMMatrixMultiply(XMMatrixRotationY((float)elapsedTime), XMMatrixTranslation(0.0f, 30.0f, 0.0f));
+			spaceStation.SetWorldMatrix(temp);
+			ConstantBufferSetUp(spaceStation.GetWorldMatrix(), camera);
+			spaceStation.Draw(myContext, &viewPort[0]);
 
 			temp = XMMatrixMultiply(XMMatrixRotationX(30.0f), XMMatrixTranslation(0.0f, 0.0f, 0.0f));
 			venatorStarDestroyer.SetWorldMatrix(temp);
-			ConstantBufferSetUp(venatorStarDestroyer.GetWorldMatrix());
-			venatorStarDestroyer.Draw(myContext);
+			ConstantBufferSetUp(venatorStarDestroyer.GetWorldMatrix(), camera);
+			venatorStarDestroyer.DrawInstanced(myContext, &viewPort[0], 5);
+
+			// second view port draw calls
+			skyBox.SetWorldMatrix(XMMatrixTranslation(camera.GetWorldPosition().x, camera.GetWorldPosition().y, camera.GetWorldPosition().z));
+			ConstantBufferSetUp(skyBox.GetWorldMatrix(), camera1);
+			skyBox.Draw(myContext, &viewPort[1]);
+
+			myContext->IASetInputLayout(inputLayout);
+			temp = XMMatrixMultiply(XMMatrixRotationY(-160.0f * 0.01f), XMMatrixTranslation(50.0f, 0.0f, 0.0f));
+			corvette.SetWorldMatrix(temp);
+			ConstantBufferSetUp(corvette.GetWorldMatrix(), camera1);
+			corvette.Draw(myContext, &viewPort[1]);
+
+			temp = XMMatrixTranslation(-50.0f, 0.0f, 0.0f);
+			arc170.SetWorldMatrix(temp);
+			ConstantBufferSetUp(arc170.GetWorldMatrix(), camera1);
+			arc170.Draw(myContext, &viewPort[1]);
+
+			temp = XMMatrixTranslation(0.0f, 0.0f, 0.0f);
+			plane.SetWorldMatrix(temp);
+			ConstantBufferSetUp(plane.GetWorldMatrix(), camera1);
+			plane.Draw(myContext, &viewPort[1]);
+
+			temp = XMMatrixMultiply(XMMatrixRotationY((float)elapsedTime), XMMatrixTranslation(0.0f, 30.0f, 0.0f));
+			spaceStation.SetWorldMatrix(temp);
+			ConstantBufferSetUp(spaceStation.GetWorldMatrix(), camera1);
+			spaceStation.Draw(myContext, &viewPort[1]);
+
+			temp = XMMatrixMultiply(XMMatrixRotationX(30.0f), XMMatrixTranslation(0.0f, 0.0f, 0.0f));
+			venatorStarDestroyer.SetWorldMatrix(temp);
+			ConstantBufferSetUp(venatorStarDestroyer.GetWorldMatrix(), camera1);
+			venatorStarDestroyer.DrawInstanced(myContext, &viewPort[1], 5);
 
 			// Present Backbuffer using Swapchain object
 			// Framerate is currently unlocked, we suggest "MSI Afterburner" to track your current FPS and memory usage.
 			mySwapChain->Present(1, 0); // set first argument to 1 to enable vertical refresh sync with display
+			
 			// Free any temp DX handles aquired this frame
 			myRenderTargetView->Release();
 		}
@@ -155,16 +202,15 @@ HRESULT Graphics::InitializeDevice()
 	};
 	// create input layout
 	hr = myDevice->CreateInputLayout(layout, ARRAYSIZE(layout), VertexShader, sizeof(VertexShader), &inputLayout);
-	hr = myDevice->CreateInputLayout(layout, ARRAYSIZE(layout), SkyboxVertexShader, sizeof(SkyboxVertexShader), &inputLayout1);
 
 	// load model data
-	skyBox.AddMesh(new Mesh("SkyBox", -10.0f));
+	skyBox.AddMesh(new Mesh("SkyBox", -20.0f));
 	skyBox.GetMeshes()[0]->LoadVertices("../../My assets/SkyBox_Data", XMFLOAT4(0.0f, 0.0f, 0.0f, 0.0f));
 	hr = skyBox.GetMeshes()[0]->CreateVertexShader(myDevice, SkyboxVertexShader, sizeof(SkyboxVertexShader));
 	hr = skyBox.GetMeshes()[0]->CreatePixelShader(myDevice, SkyboxPixelShader, sizeof(SkyboxPixelShader));
 	hr = skyBox.GetMeshes()[0]->CreateVertexBuffer(myDevice);
 	hr = skyBox.GetMeshes()[0]->CreateIndexBuffer(myDevice);
-	hr = skyBox.GetMeshes()[0]->CreateShaderResourceView(myDevice, L"../../My assets/Textures/bkg1_bot.dds");
+	hr = skyBox.GetMeshes()[0]->CreateShaderResourceView(myDevice, L"../../My assets/Textures/SkyboxOcean.dds");
 	hr = skyBox.GetMeshes()[0]->CreateSamplerState(myDevice);
 
 	corvette.AddMesh(new Mesh("Corvette", 0.01f));
@@ -205,13 +251,12 @@ HRESULT Graphics::InitializeDevice()
 
 	venatorStarDestroyer.AddMesh(new Mesh("VenatorStarDestroyer", 0.003f));
 	venatorStarDestroyer.GetMeshes()[0]->LoadVertices("../../My assets/Venator_Data", XMFLOAT4(0.0f, 0.0f, 0.0f, 0.0f));
-	hr = venatorStarDestroyer.GetMeshes()[0]->CreateVertexShader(myDevice, VertexShader, sizeof(VertexShader));
-	hr = venatorStarDestroyer.GetMeshes()[0]->CreatePixelShader(myDevice, PixelShader, sizeof(PixelShader));
+	hr = venatorStarDestroyer.GetMeshes()[0]->CreateVertexShader(myDevice, HyperSpeedVertexShader, sizeof(HyperSpeedVertexShader));
+	hr = venatorStarDestroyer.GetMeshes()[0]->CreatePixelShader(myDevice, HyperSpeedPixelShader, sizeof(HyperSpeedPixelShader));
 	hr = venatorStarDestroyer.GetMeshes()[0]->CreateVertexBuffer(myDevice);
 	hr = venatorStarDestroyer.GetMeshes()[0]->CreateIndexBuffer(myDevice);
 	hr = venatorStarDestroyer.GetMeshes()[0]->CreateShaderResourceView(myDevice, L"../../My assets/Textures/VenatorStarDestroyer/ReV_venator.dds");
 	hr = venatorStarDestroyer.GetMeshes()[0]->CreateSamplerState(myDevice);
-
 
 	// describe constant variables and create constant buffer
 	hr = CreateBuffer(myDevice, &matrix_id3d11buffer, D3D11_BIND_CONSTANT_BUFFER, sizeof(Matrix_ConstantBuffer), nullptr);
@@ -222,7 +267,6 @@ HRESULT Graphics::InitializeDevice()
 void Graphics::CleanDevice()
 {
 	inputLayout->Release();
-	inputLayout1->Release();
 	matrix_id3d11buffer->Release();
 	light_id3d11buffer->Release();
 }
@@ -321,7 +365,7 @@ void Graphics::KeyboardHandle(float delta)
 	camera.UpdateView();
 }
 
-void Graphics::ConstantBufferSetUp(const XMMATRIX& worldMatrix)
+void Graphics::ConstantBufferSetUp(const XMMATRIX& worldMatrix,Camera& camera)
 {
 	// lighting
 	static float rot = 0.0f; rot += 0.1f;
@@ -339,10 +383,10 @@ void Graphics::ConstantBufferSetUp(const XMMATRIX& worldMatrix)
 	XMStoreFloat4(&light_cb.lightNormal[1], pLight.GetNormalVectorNormalized());
 	XMStoreFloat4(&light_cb.lightColor[1], pLight.GetColor());
 	// spot light
-	sLight.SetPosition(radius * 5.0f, 15.0f, radius * 5.0f);
-	sLight.SetWorldMatrix(XMMatrixRotationY(0.01f));
+	sLight.SetPosition(radius * 5.0f, 1.0f, radius * 5.0f);
+	sLight.SetWorldMatrix(XMMatrixRotationY(0.001f));
 	sLight.UpdatePosition();
-	XMVECTOR coneRatio = { 0.98f, 0.88f, (float)blackWhite, 0.0f };
+	XMVECTOR coneRatio = { 0.78f, 0.48f, (float)blackWhite, 0.0f };
 	XMStoreFloat4(&light_cb.coneRatio, coneRatio);
 	XMStoreFloat4(&light_cb.lightPos[2], sLight.GetPositionVector());
 	XMStoreFloat4(&light_cb.lightNormal[2], sLight.GetNormalVectorNormalized());
@@ -353,14 +397,18 @@ void Graphics::ConstantBufferSetUp(const XMMATRIX& worldMatrix)
 	else if (radius <= 1.0f)
 		shrink = false;
 	if (shrink)
-		radius -= 0.03f;
+		radius -= 0.01f;
 	else
-		radius += 0.03f;
+		radius += 0.01f;
 	XMVECTOR lightRad = { radius, rot, (float)elapsedTime, (float)wave };
 	XMStoreFloat4(&light_cb.lightRadius, lightRad);
 
 	// world
-	XMStoreFloat4x4(&matrix_cb.world, worldMatrix);
+	XMStoreFloat4x4(&matrix_cb.world[0], worldMatrix);
+	XMStoreFloat4x4(&matrix_cb.world[1], XMMatrixMultiply(XMMatrixRotationX(30.0f), XMMatrixTranslation(-40.0f, 0.0f, 40.0f)));
+	XMStoreFloat4x4(&matrix_cb.world[2], XMMatrixMultiply(XMMatrixRotationX(30.0f), XMMatrixTranslation(-40.0f, 0.0f, -40.0f)));
+	XMStoreFloat4x4(&matrix_cb.world[3], XMMatrixMultiply(XMMatrixRotationX(30.0f), XMMatrixTranslation(-80.0f, 0.0f, 80.0f)));
+	XMStoreFloat4x4(&matrix_cb.world[4], XMMatrixMultiply(XMMatrixRotationX(30.0f), XMMatrixTranslation(-80.0f, 0.0f, -80.0f)));
 	// view
 	XMStoreFloat4x4(&matrix_cb.view, camera.GetViewMatrix());
 	// projection

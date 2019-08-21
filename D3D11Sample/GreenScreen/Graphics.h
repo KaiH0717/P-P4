@@ -23,7 +23,7 @@
 struct Matrix_ConstantBuffer
 {
 	// storage type for permenant use
-	XMFLOAT4X4 world;
+	XMFLOAT4X4 world[5];
 	XMFLOAT4X4 view;
 	XMFLOAT4X4 projection;
 	// camera position
@@ -55,7 +55,6 @@ class Graphics
 	ID3D11Buffer* matrix_id3d11buffer;
 	ID3D11Buffer* light_id3d11buffer;
 	ID3D11InputLayout* inputLayout = nullptr;
-	ID3D11InputLayout* inputLayout1 = nullptr;
 	// constant buffers
 	Matrix_ConstantBuffer matrix_cb;
 	Light_ConstantBuffer light_cb;
@@ -63,6 +62,7 @@ class Graphics
 	bool shrink = false;
 	float radius = 5.0f;
 	Camera camera;
+	Camera camera1;
 	Light dLight;
 	Light pLight;
 	Light sLight;
@@ -78,17 +78,20 @@ class Graphics
 	Model plane;
 	Model spaceStation;
 	Model venatorStarDestroyer;
+
+	unsigned int wndWidth = 0;
+	unsigned int wndHeight = 0;
 public:
 	// Init constructor
 	Graphics(GW::SYSTEM::GWindow* attatchPoint);
 	// Shutdown
 	~Graphics();
 	// Draw
-	void Render();
+	void Render(GW::SYSTEM::GWindow* attatchPoint);
 	// Init function
 	HRESULT InitializeDevice();
 	void CleanDevice();
 	HRESULT CreateBuffer(ID3D11Device* device,ID3D11Buffer** buffer, UINT bindFlag, UINT byteWidth, const void* pSysMem);
 	void KeyboardHandle(float delta);
-	void ConstantBufferSetUp(const XMMATRIX& worldMatrix);
+	void ConstantBufferSetUp(const XMMATRIX& worldMatrix, Camera& camera);
 };

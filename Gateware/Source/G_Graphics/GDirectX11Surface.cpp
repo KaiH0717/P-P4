@@ -210,22 +210,14 @@ GReturn GDirectX11::Initialize(unsigned long long _initMask)
 		// Initialize Viewport //
 		/////////////////////////
 
-		D3D11_VIEWPORT viewport[2];
-		viewport[0].Width = (FLOAT)width;
-		viewport[0].Height = (FLOAT)height;
-		viewport[0].MinDepth = 0.0f;
-		viewport[0].MaxDepth = 1.0f;
-		gWnd->GetClientTopLeft((unsigned int&)viewport[0].TopLeftX, (unsigned int&)viewport[0].TopLeftY);
-
-		viewport[1].Width = 500.0f;
-		viewport[1].Height = 500.0f;
-		viewport[1].MinDepth = 0.0f;
-		viewport[1].MaxDepth = 1.0f;
-		viewport[1].TopLeftX = 100.0f;
-		viewport[1].TopLeftY = 100.0f;
-
-		context->RSSetViewports(2, viewport);
-	
+		D3D11_VIEWPORT viewport;
+		viewport.Width = (FLOAT)width;
+		viewport.Height = (FLOAT)height;
+		viewport.MinDepth = 0.0f;
+		viewport.MaxDepth = 1.0f;
+		gWnd->GetClientTopLeft((unsigned int&)viewport.TopLeftX, (unsigned int&)viewport.TopLeftY);
+		context->RSSetViewports(1, &viewport);
+		
 	return SUCCESS;
 }
 
