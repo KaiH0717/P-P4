@@ -15,7 +15,4 @@ Reset camera: R;
 Toggle Hyperspeed for star ships: F;
 Toggle black/white scene: G;
 
-The point light is red, it should be in front of the camera rotating on its y axis,
-The directional light is a faded white, it is also rotating on its y axis.
-
 Make sure you build the solution before running it, my .vs file was too big so I delete them.
