@@ -8,7 +8,7 @@ void Model::SetPipeline(ID3D11DeviceContext* context, unsigned int index)
 	context->IASetIndexBuffer(meshes[index]->indexBuffer, DXGI_FORMAT_R32_UINT, 0);
 	context->VSSetShader(meshes[index]->vertexShader, nullptr, 0);
 	context->PSSetShader(meshes[index]->pixelShader, nullptr, 0);
-	context->PSSetShaderResources(0, 1, &meshes[index]->shaderRV);
+	context->PSSetShaderResources(0, meshes[index]->shaderResourceViews.size(), meshes[index]->shaderResourceViews.data());
 	context->PSSetSamplers(0, 1, &meshes[index]->sampler);
 }
 

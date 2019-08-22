@@ -4,9 +4,10 @@ SamplerState samLinear : register(s0);
 struct OutputVertex
 {
     float4 position : SV_POSITION;
-    float4 color : COLOR0;
+    float4 tangent : TANGENT;
+    float4 binormal : BINORMAL;
     float3 normal : NORMAL;
-    float2 tex : TEXCOORD0;
+    float2 tex : TEXCOORD;
     float4 worldPosition : WORLDPOSITION;
 };
 
@@ -33,7 +34,7 @@ cbuffer Light_ConstantBuffer : register(b1)
 float4 main(OutputVertex inputPixel) : SV_TARGET
 {
     // directional lighting
-    float ratio = saturate(dot((float3) -lightNor[0], inputPixel.normal) + 0.45f);
+    float ratio = saturate(dot((float3) -lightNor[0], inputPixel.normal) + 0.65f);
     float4 color1 = lerp(float4(0.0f, 0.0f, 0.0f, 1.0f), lightColor[0], ratio);
     // point lighting
     float3 pointLightDir = (float3) normalize(lightPos[1] - inputPixel.worldPosition);
@@ -53,11 +54,11 @@ float4 main(OutputVertex inputPixel) : SV_TARGET
     float3 halfVector = normalize(((float3) -lightNor[0]) + viewDir);
     float intensity = saturate(pow(dot(inputPixel.normal, halfVector), 2.2f));
     float4 color4 = lerp(float4(0.0f, 0.0f, 0.0f, 1.0f), lightColor[0], intensity * 1.25f);
-    inputPixel.color = (color1 + color2 + color3 + color4) * txDiffuse.Sample(samLinear, inputPixel.tex);
+    float4 outputColor = (color1 + color2 + color3 + color4) * txDiffuse.Sample(samLinear, inputPixel.tex);
     if (coneRatio.z == 1.0f)
     {
-        float grey = (inputPixel.color.x + inputPixel.color.y + inputPixel.color.z) / 3.0f;
-        inputPixel.color = float4(grey, grey, grey, 1.0f);
+        float grey = (outputColor.x + outputColor.y + outputColor.z) / 3.0f;
+        outputColor = float4(grey, grey, grey, 1.0f);
     }
-    return inputPixel.color;
+    return outputColor;
 }

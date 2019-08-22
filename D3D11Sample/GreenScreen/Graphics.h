@@ -75,9 +75,11 @@ class Graphics
 	Model skyBox;
 	Model corvette;
 	Model arc170;
-	Model plane;
 	Model spaceStation;
 	Model venatorStarDestroyer;
+
+	std::vector<XMVECTOR> modelPositions;
+	unsigned int modelID = 0;
 
 	unsigned int wndWidth = 0;
 	unsigned int wndHeight = 0;

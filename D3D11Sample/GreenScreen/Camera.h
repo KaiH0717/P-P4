@@ -64,5 +64,5 @@ public:
 	void Pitch(float degrees);
 	void Yaw(float degrees);
 	void Roll(float degrees);
-	//void LookAt(const XMVECTOR& position);
+	void LookAt(const XMVECTOR& target);
 };

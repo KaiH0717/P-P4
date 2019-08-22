@@ -14,7 +14,8 @@ using namespace DirectX;
 struct Vertex
 {
 	XMFLOAT4 position = XMFLOAT4(0.0f, 0.0f, 0.0f, 1.0f);
-	XMFLOAT4 color = XMFLOAT4(1.0f, 1.0f, 1.0f, 1.0f);
+	XMFLOAT4 tangent = XMFLOAT4(0.0f, 0.0f, 0.0f, 0.0f);
+	XMFLOAT4 binormal = XMFLOAT4(0.0f, 0.0f, 0.0f, 0.0f);
 	XMFLOAT3 normal = XMFLOAT3(0.0f, 0.0f, 0.0f);
 	XMFLOAT2 texture = XMFLOAT2(0.0f, 0.0f);
 };
@@ -46,8 +47,7 @@ struct Mesh
 	//////////////////////////////
 	// textures
 	//////////////////////////////
-	std::vector<ID3D11ShaderResourceView*> shaderRVVectors;
-	ID3D11ShaderResourceView* shaderRV = nullptr;
+	std::vector<ID3D11ShaderResourceView*> shaderResourceViews;
 	ID3D11SamplerState* sampler = nullptr;
 
 	//////////////////////////////
@@ -94,8 +94,11 @@ inline Mesh::~Mesh()
 	if (indexBuffer) { indexBuffer->Release(); indexBuffer = nullptr; }
 	if (vertexShader) { vertexShader->Release(); vertexShader = nullptr; }
 	if (pixelShader) { pixelShader->Release(); pixelShader = nullptr; }
-	if (shaderRV) { shaderRV->Release(); shaderRV = nullptr; }
 	if (sampler) { sampler->Release(); sampler = nullptr; }
+	for (size_t i = 0; i < shaderResourceViews.size(); i++)
+	{
+		shaderResourceViews[i]->Release();
+	}
 }
 
 inline void Mesh::LoadVertices(const char* fileName, XMFLOAT4 normalOffset)
@@ -106,12 +109,23 @@ inline void Mesh::LoadVertices(const char* fileName, XMFLOAT4 normalOffset)
 	this->vertexCount = fileIO.vertexCount;
 	this->indices = new unsigned int[this->indexCount];
 	this->vertices = new Vertex[this->vertexCount];
-	for (size_t i = 0; i < this->vertexCount; i++)
+	unsigned int i;
+	for (i = 0; i < this->vertexCount; ++i)
 	{
 		this->vertices[i].position.x = fileIO.vertices[i].position[0] * this->scale;
 		this->vertices[i].position.y = fileIO.vertices[i].position[1] * this->scale;
 		this->vertices[i].position.z = fileIO.vertices[i].position[2] * this->scale;
 		this->vertices[i].position.w = 1.0f;
+
+		this->vertices[i].tangent.x = fileIO.vertices[i].tangent[0];
+		this->vertices[i].tangent.y = fileIO.vertices[i].tangent[1];
+		this->vertices[i].tangent.z = fileIO.vertices[i].tangent[2];
+		this->vertices[i].tangent.w = fileIO.vertices[i].tangent[3];
+
+		this->vertices[i].binormal.x = fileIO.vertices[i].binormal[0];
+		this->vertices[i].binormal.y = fileIO.vertices[i].binormal[1];
+		this->vertices[i].binormal.z = fileIO.vertices[i].binormal[2];
+		this->vertices[i].binormal.w = fileIO.vertices[i].binormal[3];
 
 		this->vertices[i].texture.x = fileIO.vertices[i].texture[0];
 		this->vertices[i].texture.y = fileIO.vertices[i].texture[1];
@@ -119,12 +133,55 @@ inline void Mesh::LoadVertices(const char* fileName, XMFLOAT4 normalOffset)
 		this->vertices[i].normal.x = fileIO.vertices[i].normal[0] + normalOffset.x;
 		this->vertices[i].normal.y = fileIO.vertices[i].normal[1] + normalOffset.y;
 		this->vertices[i].normal.z = fileIO.vertices[i].normal[2] + normalOffset.z;
-
-		this->vertices[i].color = XMFLOAT4(0.3f, 0.3f, 0.3f, 1.0f);
 	}
-	for (size_t i = 0; i < this->indexCount; i++)
+	for (i = 0; i < this->indexCount; ++i)
 	{
 		this->indices[i] = fileIO.indices[i];
+	}
+	for (i = 0; i < this->vertexCount; ++i)
+	{
+		// store vertex position
+		XMVECTOR vert0 = XMLoadFloat4(&this->vertices[i].position);
+		XMVECTOR vert1 = XMLoadFloat4(&this->vertices[i + 1].position);
+		XMVECTOR vert2 = XMLoadFloat4(&this->vertices[i + 2].position);
+		// create 2 vertex edges
+		XMVECTOR vertEdge0Vector = vert1 - vert0;
+		XMVECTOR vertEdge1Vector = vert2 - vert0;
+		// store vertex texture
+		XMVECTOR tex0 = XMLoadFloat2(&this->vertices[i].texture);
+		XMVECTOR tex1 = XMLoadFloat2(&this->vertices[i + 1].texture);
+		XMVECTOR tex2 = XMLoadFloat2(&this->vertices[i + 2].texture);
+		// create 2 texture edges
+		XMVECTOR texEdge0Vector = tex1 - tex0;
+		XMVECTOR texEdge1Vector = tex2 - tex0;
+		// find ratio between texture coordinates
+		XMFLOAT4 vertEdge0; XMStoreFloat4(&vertEdge0, vertEdge0Vector);
+		XMFLOAT4 vertEdge1; XMStoreFloat4(&vertEdge1, vertEdge1Vector);
+		XMFLOAT2 texEdge0; XMStoreFloat2(&texEdge0, texEdge0Vector);
+		XMFLOAT2 texEdge1; XMStoreFloat2(&texEdge1, texEdge1Vector);
+		float ratio = 1.0f / (texEdge0.x * texEdge1.y - texEdge1.x * texEdge0.y);
+		// tangent vector (direction along the U)
+		XMFLOAT3 uDirection = XMFLOAT3((texEdge1.y * vertEdge0.x - texEdge0.y * vertEdge1.x) * ratio,
+									   (texEdge1.y * vertEdge0.y - texEdge0.y * vertEdge1.y) * ratio,
+									   (texEdge1.y * vertEdge0.z - texEdge0.y * vertEdge1.z) * ratio);
+		// handedness vector (direction along the V)
+		XMFLOAT3 vDirection = XMFLOAT3((texEdge0.y * vertEdge1.x - texEdge1.y * vertEdge0.x) * ratio,
+									   (texEdge0.y * vertEdge1.y - texEdge1.y * vertEdge0.y) * ratio,
+									   (texEdge0.y * vertEdge1.z - texEdge1.y * vertEdge0.z) * ratio);
+		// find tangent
+		XMVECTOR uDirectionVector = XMLoadFloat3(&uDirection);
+		uDirectionVector = XMVector3Normalize(uDirectionVector);
+		XMVECTOR dotResult = XMVector3Dot(XMLoadFloat3(&this->vertices[i].normal), uDirectionVector);
+		XMVECTOR tangent = uDirectionVector - XMLoadFloat3(&this->vertices[i].normal) * dotResult;
+		tangent = XMVector3Normalize(tangent);
+		XMStoreFloat4(&this->vertices[i].tangent, tangent);
+		// find handedness
+		XMVECTOR vDirectionVector = XMLoadFloat3(&vDirection);
+		vDirectionVector = XMVector3Normalize(vDirectionVector);
+		XMVECTOR crossResult = XMVector3Cross(XMLoadFloat3(&this->vertices[i].normal), uDirectionVector);
+		XMVECTOR handedness = vDirectionVector;
+		dotResult = XMVector3Dot(crossResult, handedness);
+		this->vertices[i].tangent.w = (dotResult.m128_f32[0] < 0.0f) ? -1.0f : 1.0f;
 	}
 }
 
@@ -190,8 +247,9 @@ inline HRESULT Mesh::CreateShaderResourceView(ID3D11Device* device, const wchar_
 {
 	if (device)
 	{
-		HRESULT hr = CreateDDSTextureFromFile(device, fileName, nullptr, &this->shaderRV);
-		shaderRVVectors.push_back(this->shaderRV);
+		ID3D11ShaderResourceView* srv;
+		HRESULT hr = CreateDDSTextureFromFile(device, fileName, nullptr, &srv);
+		shaderResourceViews.push_back(srv);
 		return hr;
 	}
 	return E_INVALIDARG;

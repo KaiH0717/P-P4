@@ -14,11 +14,11 @@ class FBXBinaryFileIO
 public:
 	std::vector<unsigned int> indices;
 	std::vector<PER_VERTEX_DATA> vertices;
-	unsigned int index = 0;
+	unsigned int index;
 	PER_VERTEX_DATA vertex;
 
-	unsigned int vertexCount = 0;
-	unsigned int indexCount = 0;
+	unsigned int vertexCount;
+	unsigned int indexCount;
 public:
 	////////////////////////////////////////
 	// Setter functions
@@ -30,6 +30,20 @@ public:
 		vertex.position[2] = position[2];
 		vertex.position[3] = position[3];
 	}
+	void SetVertexTangent(float* tangent)
+	{
+		vertex.tangent[0] = tangent[0];
+		vertex.tangent[1] = tangent[1];
+		vertex.tangent[2] = tangent[2];
+		vertex.tangent[3] = tangent[3];
+	}
+	void SetVertexBiNormal(float* binormal)
+	{
+		vertex.binormal[0] = binormal[0];
+		vertex.binormal[1] = binormal[1];
+		vertex.binormal[2] = binormal[2];
+		vertex.binormal[3] = binormal[3];
+	}
 	void SetVertexNormal(float* normal)
 	{
 		vertex.normal[0] = normal[0];
@@ -40,12 +54,6 @@ public:
 	{
 		vertex.texture[0] = texture[0];
 		vertex.texture[1] = texture[1];
-	}
-	void SetVertexData(float* position, float* normal, float* texture)
-	{
-		SetVertexPosition(position);
-		SetVertexNormal(normal);
-		SetVertexTexture(texture);
 	}
 	////////////////////////////////////////
 	// File IO functions
@@ -80,7 +88,7 @@ public:
 		if (bfin.is_open())
 		{
 			// read vertex data
-			bfin.read((char*)& vertexCount, sizeof(unsigned int)); // read vertex count
+			bfin.read((char*)& vertexCount, sizeof(unsigned int)); // read count
 			for (unsigned int i = 0; i < vertexCount; i++)
 			{
 				// populate vertex vector
@@ -88,7 +96,7 @@ public:
 				vertices.push_back(vertex);
 			}
 			// read index data
-			bfin.read((char*)& indexCount, sizeof(unsigned int)); // read index count
+			bfin.read((char*)& indexCount, sizeof(unsigned int));
 			for (unsigned int i = 0; i < indexCount; i++)
 			{
 				// populate index vector

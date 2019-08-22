@@ -5,9 +5,10 @@ SamplerState samLinear : register(s0);
 struct OutputVertex
 {
     float4 position : SV_POSITION;
-    float4 color : COLOR0;
+    float4 tangent : TANGENT;
+    float4 binormal : BINORMAL;
     float3 normal : NORMAL;
-    float2 tex : TEXCOORD0;
+    float2 tex : TEXCOORD;
     float4 worldPosition : WORLDPOSITION;
     float4 localPosition : LOCALPOSITION;
 };
@@ -34,12 +35,12 @@ cbuffer Light_ConstantBuffer : register(b1)
 
 float4 main(OutputVertex inputPixel) : SV_TARGET
 {
-    inputPixel.color = txDiffuse.Sample(samLinear, (float3) inputPixel.localPosition);
+    float4 outputColor = txDiffuse.Sample(samLinear, (float3) inputPixel.localPosition);
     
     if (coneRatio.z == 1.0f)
     {
-        float grey = (inputPixel.color.x + inputPixel.color.y + inputPixel.color.z) / 3.0f;
-        inputPixel.color = float4(grey, grey, grey, 1.0f);
+        float grey = (outputColor.x + outputColor.y + outputColor.z) / 3.0f;
+        outputColor = float4(grey, grey, grey, 1.0f);
     }
-    return inputPixel.color;
+    return outputColor;
 }

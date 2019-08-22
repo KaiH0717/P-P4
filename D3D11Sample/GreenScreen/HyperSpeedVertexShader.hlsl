@@ -3,17 +3,19 @@
 struct InputVertex
 {
     float4 position : POSITION;
-    float4 color : COLOR0;
+    float4 tangent : TANGENT;
+    float4 binormal : BINORMAL;
     float3 normal : NORMAL;
-    float2 tex : TEXCOORD0;
+    float2 tex : TEXCOORD;
 };
 
 struct OutputVertex
 {
     float4 position : SV_POSITION;
-    float4 color : COLOR0;
+    float4 tangent : TANGENT;
+    float4 binormal : BINORMAL;
     float3 normal : NORMAL;
-    float2 tex : TEXCOORD0;
+    float2 tex : TEXCOORD;
     float4 worldPosition : WORLDPOSITION;
 };
 
@@ -45,7 +47,7 @@ OutputVertex main(InputVertex input, uint instanceID : SV_InstanceID)
     output.position = mul(output.position, world[instanceID]);
     output.worldPosition = output.position;
     output.normal = input.normal;
-    output.normal = mul(float4(output.normal, 1), world[instanceID]).xyz;
+    output.normal = mul(float4(output.normal, 0.0f), world[instanceID]).xyz;
     output.position.x += tan(output.position.y * 0.005f + lightRadius.z) * lightRadius.w;
     output.position.y += cos(output.position.x * 0.0005f + lightRadius.z) * lightRadius.w;
     output.position = mul(output.position, view);

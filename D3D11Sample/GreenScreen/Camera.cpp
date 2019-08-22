@@ -136,7 +136,15 @@ void Camera::Yaw(float degrees)
 
 void Camera::Roll(float degrees)
 {
+	// local rotation
 	XMMATRIX rotation = XMMatrixRotationZ(degrees);
 	XMMATRIX worldViewMatrix = XMMatrixMultiply(rotation, XMLoadFloat4x4(&worldView));
+	XMStoreFloat4x4(&worldView, worldViewMatrix);
+}
+
+void Camera::LookAt(const XMVECTOR& target)
+{
+	XMMATRIX worldViewMatrix = XMMatrixLookAtLH(XMLoadFloat4(&this->GetWorldPosition()), target, XMVectorSet(0.0f, 1.0f, 0.0f, 0.0f));
+	worldViewMatrix = XMMatrixInverse(nullptr, worldViewMatrix);
 	XMStoreFloat4x4(&worldView, worldViewMatrix);
 }
