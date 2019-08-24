@@ -1,4 +1,7 @@
+
 Texture2D txDiffuse : register(t0);
+Texture2D txNormal : register(t1);
+
 SamplerState samLinear : register(s0);
 
 struct OutputVertex
@@ -27,14 +30,24 @@ cbuffer Light_ConstantBuffer : register(b1)
     float4 lightColor[3];
     // x = radius, y = rotation, z = time, w = wavy toggle
     float4 lightRadius;
-    // x = inner cone ratio, y = outer cone ratio, z = black and white toggle
+    // x = inner cone ratio, y = outer cone ratio, z = normal mapping toggle
     float4 coneRatio;
 }
 
 float4 main(OutputVertex inputPixel) : SV_TARGET
 {
+    float3 newNormal = txNormal.Sample(samLinear, inputPixel.tex);
+    newNormal = (newNormal * 2.0f) - 1.0f;
+    inputPixel.normal = normalize(inputPixel.normal);
+    inputPixel.tangent = normalize(inputPixel.tangent);
+    inputPixel.binormal = normalize(inputPixel.binormal);
+    float3x3 tbnMatrix = float3x3(inputPixel.tangent.xyz, inputPixel.binormal.xyz, inputPixel.normal.xyz);
+    newNormal = mul(newNormal, tbnMatrix);
+    if (coneRatio.z == 1.0f)
+        inputPixel.normal = newNormal;
+
     // directional lighting
-    float ratio = saturate(dot((float3) -lightNor[0], normalize(inputPixel.normal)) + 0.45f);
+    float ratio = saturate(dot((float3) -lightNor[0], inputPixel.normal) + 0.45f);
     float4 color1 = lerp(float4(0.0f, 0.0f, 0.0f, 1.0f), lightColor[0], ratio);
     // point lighting
     float3 pointLightDir = (float3) normalize(lightPos[1] - inputPixel.worldPosition);
@@ -54,13 +67,7 @@ float4 main(OutputVertex inputPixel) : SV_TARGET
     float3 halfVector = normalize(((float3) -lightNor[0]) + viewDir);
     float intensity = saturate(pow(dot(inputPixel.normal, halfVector), 2.2f));
     float4 color4 = lerp(float4(0.0f, 0.0f, 0.0f, 1.0f), lightColor[0], intensity * 1.25f);
+    // color combination and modulation
     float4 outputColor = (color1 + color2 + color3 + color4) * txDiffuse.Sample(samLinear, inputPixel.tex);
-    if (coneRatio.z == 1.0f)
-    {
-        float grey = (outputColor.x + outputColor.y + outputColor.z) / 3.0f;
-        outputColor = float4(grey, grey, grey, 1.0f);
-    }
-    //inputPixel.tex.x += sin(inputPixel.tex.y * 0.1f + lightRadius.z) * lightRadius.w;
-    //inputPixel.tex.y += cos(inputPixel.tex.x * 0.1f + lightRadius.z) * lightRadius.w;
     return outputColor;
 }

@@ -59,7 +59,7 @@ struct Mesh
 	//////////////////////////////
 	// load in vertices
 	//////////////////////////////
-	void LoadVertices(const char* fileName, XMFLOAT4 normalOffset);
+	void LoadVertices(const char* fileName);
 
 	//////////////////////////////
 	// resource initailization
@@ -101,7 +101,7 @@ inline Mesh::~Mesh()
 	}
 }
 
-inline void Mesh::LoadVertices(const char* fileName, XMFLOAT4 normalOffset)
+inline void Mesh::LoadVertices(const char* fileName)
 {
 	FBXBinaryFileIO fileIO;
 	fileIO.Read(fileName);
@@ -130,58 +130,13 @@ inline void Mesh::LoadVertices(const char* fileName, XMFLOAT4 normalOffset)
 		this->vertices[i].texture.x = fileIO.vertices[i].texture[0];
 		this->vertices[i].texture.y = fileIO.vertices[i].texture[1];
 
-		this->vertices[i].normal.x = fileIO.vertices[i].normal[0] + normalOffset.x;
-		this->vertices[i].normal.y = fileIO.vertices[i].normal[1] + normalOffset.y;
-		this->vertices[i].normal.z = fileIO.vertices[i].normal[2] + normalOffset.z;
+		this->vertices[i].normal.x = fileIO.vertices[i].normal[0];
+		this->vertices[i].normal.y = fileIO.vertices[i].normal[1];
+		this->vertices[i].normal.z = fileIO.vertices[i].normal[2];
 	}
 	for (i = 0; i < this->indexCount; ++i)
 	{
 		this->indices[i] = fileIO.indices[i];
-	}
-	for (i = 0; i < this->vertexCount; ++i)
-	{
-		// store vertex position
-		XMVECTOR vert0 = XMLoadFloat4(&this->vertices[i].position);
-		XMVECTOR vert1 = XMLoadFloat4(&this->vertices[i + 1].position);
-		XMVECTOR vert2 = XMLoadFloat4(&this->vertices[i + 2].position);
-		// create 2 vertex edges
-		XMVECTOR vertEdge0Vector = vert1 - vert0;
-		XMVECTOR vertEdge1Vector = vert2 - vert0;
-		// store vertex texture
-		XMVECTOR tex0 = XMLoadFloat2(&this->vertices[i].texture);
-		XMVECTOR tex1 = XMLoadFloat2(&this->vertices[i + 1].texture);
-		XMVECTOR tex2 = XMLoadFloat2(&this->vertices[i + 2].texture);
-		// create 2 texture edges
-		XMVECTOR texEdge0Vector = tex1 - tex0;
-		XMVECTOR texEdge1Vector = tex2 - tex0;
-		// find ratio between texture coordinates
-		XMFLOAT4 vertEdge0; XMStoreFloat4(&vertEdge0, vertEdge0Vector);
-		XMFLOAT4 vertEdge1; XMStoreFloat4(&vertEdge1, vertEdge1Vector);
-		XMFLOAT2 texEdge0; XMStoreFloat2(&texEdge0, texEdge0Vector);
-		XMFLOAT2 texEdge1; XMStoreFloat2(&texEdge1, texEdge1Vector);
-		float ratio = 1.0f / (texEdge0.x * texEdge1.y - texEdge1.x * texEdge0.y);
-		// tangent vector (direction along the U)
-		XMFLOAT3 uDirection = XMFLOAT3((texEdge1.y * vertEdge0.x - texEdge0.y * vertEdge1.x) * ratio,
-									   (texEdge1.y * vertEdge0.y - texEdge0.y * vertEdge1.y) * ratio,
-									   (texEdge1.y * vertEdge0.z - texEdge0.y * vertEdge1.z) * ratio);
-		// handedness vector (direction along the V)
-		XMFLOAT3 vDirection = XMFLOAT3((texEdge0.y * vertEdge1.x - texEdge1.y * vertEdge0.x) * ratio,
-									   (texEdge0.y * vertEdge1.y - texEdge1.y * vertEdge0.y) * ratio,
-									   (texEdge0.y * vertEdge1.z - texEdge1.y * vertEdge0.z) * ratio);
-		// find tangent
-		XMVECTOR uDirectionVector = XMLoadFloat3(&uDirection);
-		uDirectionVector = XMVector3Normalize(uDirectionVector);
-		XMVECTOR dotResult = XMVector3Dot(XMLoadFloat3(&this->vertices[i].normal), uDirectionVector);
-		XMVECTOR tangent = uDirectionVector - XMLoadFloat3(&this->vertices[i].normal) * dotResult;
-		tangent = XMVector3Normalize(tangent);
-		XMStoreFloat4(&this->vertices[i].tangent, tangent);
-		// find handedness
-		XMVECTOR vDirectionVector = XMLoadFloat3(&vDirection);
-		vDirectionVector = XMVector3Normalize(vDirectionVector);
-		XMVECTOR crossResult = XMVector3Cross(XMLoadFloat3(&this->vertices[i].normal), uDirectionVector);
-		XMVECTOR handedness = vDirectionVector;
-		dotResult = XMVector3Dot(crossResult, handedness);
-		this->vertices[i].tangent.w = (dotResult.m128_f32[0] < 0.0f) ? -1.0f : 1.0f;
 	}
 }
 

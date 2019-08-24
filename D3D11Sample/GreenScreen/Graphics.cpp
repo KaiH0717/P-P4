@@ -36,7 +36,7 @@ Graphics::Graphics(GW::SYSTEM::GWindow* attatchPoint)
 			dLight.SetNormal(-0.577f, -0.577f, 0.577f);
 			dLight.SetColor(0.45f, 0.45f, 0.64f, 1.0f);
 			// point light init
-			pLight.SetPosition(0.0f, 5.0f, 0.0f);
+			pLight.SetPosition(50.0f, 5.0f, 0.0f);
 			pLight.SetNormal(0.0f, 0.0f, 0.0f);
 			pLight.SetColor(1.0f, 0.0f, 0.0f, 1.0f);
 			// spot light init
@@ -46,8 +46,6 @@ Graphics::Graphics(GW::SYSTEM::GWindow* attatchPoint)
 
 			time.Restart();
 			elapsedTime = 0.0;
-			wave = true;
-			blackWhite = false;
 		}
 	}
 }
@@ -144,7 +142,7 @@ void Graphics::Render(GW::SYSTEM::GWindow* attatchPoint)
 			arc170.Draw(myContext, &viewPort[0]);
 			modelPositions[1] = arc170.GetWorldMatrix().r[3];
 
-			temp = XMMatrixMultiply(XMMatrixRotationY((float)elapsedTime), XMMatrixTranslation(0.0f, 30.0f, 0.0f));
+			temp = XMMatrixMultiply(XMMatrixRotationY(/*(float)elapsedtime*/0), XMMatrixTranslation(0.0f, 30.0f, 0.0f));
 			spaceStation.SetWorldMatrix(temp);
 			ConstantBufferSetUp(spaceStation.GetWorldMatrix(), camera);
 			spaceStation.Draw(myContext, &viewPort[0]);
@@ -179,7 +177,7 @@ void Graphics::Render(GW::SYSTEM::GWindow* attatchPoint)
 			ConstantBufferSetUp(arc170.GetWorldMatrix(), camera1);
 			arc170.Draw(myContext, &viewPort[1]);
 
-			temp = XMMatrixMultiply(XMMatrixRotationY((float)elapsedTime), XMMatrixTranslation(0.0f, 30.0f, 0.0f));
+			temp = XMMatrixMultiply(XMMatrixRotationY(/*(float)elapsedTime*/0), XMMatrixTranslation(0.0f, 30.0f, 0.0f));
 			spaceStation.SetWorldMatrix(temp);
 			ConstantBufferSetUp(spaceStation.GetWorldMatrix(), camera1);
 			spaceStation.Draw(myContext, &viewPort[1]);
@@ -216,16 +214,16 @@ HRESULT Graphics::InitializeDevice()
 
 	// load model data
 	skyBox.AddMesh(new Mesh("SkyBox", -1.0f));
-	skyBox.GetMeshes()[0]->LoadVertices("../../My assets/SkyBox_Data", XMFLOAT4(0.0f, 0.0f, 0.0f, 0.0f));
+	skyBox.GetMeshes()[0]->LoadVertices("../../My assets/SkyBox_Data");
 	hr = skyBox.GetMeshes()[0]->CreateVertexShader(myDevice, SkyboxVertexShader, sizeof(SkyboxVertexShader));
 	hr = skyBox.GetMeshes()[0]->CreatePixelShader(myDevice, SkyboxPixelShader, sizeof(SkyboxPixelShader));
 	hr = skyBox.GetMeshes()[0]->CreateVertexBuffer(myDevice);
 	hr = skyBox.GetMeshes()[0]->CreateIndexBuffer(myDevice);
-	hr = skyBox.GetMeshes()[0]->CreateShaderResourceView(myDevice, L"../../My assets/Textures/SkyboxOcean.dds");
+	hr = skyBox.GetMeshes()[0]->CreateShaderResourceView(myDevice, L"../../My assets/Textures/SPAAAAAAAAAAAAAAAAAAAAACE.dds");
 	hr = skyBox.GetMeshes()[0]->CreateSamplerState(myDevice);
 
 	corvette.AddMesh(new Mesh("Corvette", 0.01f));
-	corvette.GetMeshes()[0]->LoadVertices("../../My assets/Corvette_Data", XMFLOAT4(0.0f, 0.0f, 0.0f, 0.0f));
+	corvette.GetMeshes()[0]->LoadVertices("../../My assets/Corvette_Data");
 	hr = corvette.GetMeshes()[0]->CreateVertexShader(myDevice, NormalMappingVertexShader, sizeof(NormalMappingVertexShader));
 	hr = corvette.GetMeshes()[0]->CreatePixelShader(myDevice, NormalMappingPixelShader, sizeof(NormalMappingPixelShader));
 	hr = corvette.GetMeshes()[0]->CreateVertexBuffer(myDevice);
@@ -235,7 +233,7 @@ HRESULT Graphics::InitializeDevice()
 	hr = corvette.GetMeshes()[0]->CreateSamplerState(myDevice);
 
 	arc170.AddMesh(new Mesh("ARC170", 0.005f));
-	arc170.GetMeshes()[0]->LoadVertices("../../My assets/ARC170_Data", XMFLOAT4(0.0f, 0.0f, 0.0f, 0.0f));
+	arc170.GetMeshes()[0]->LoadVertices("../../My assets/ARC170_Data");
 	hr = arc170.GetMeshes()[0]->CreateVertexShader(myDevice, VertexShader, sizeof(VertexShader));
 	hr = arc170.GetMeshes()[0]->CreatePixelShader(myDevice, PixelShader, sizeof(PixelShader));
 	hr = arc170.GetMeshes()[0]->CreateVertexBuffer(myDevice);
@@ -244,16 +242,17 @@ HRESULT Graphics::InitializeDevice()
 	hr = arc170.GetMeshes()[0]->CreateSamplerState(myDevice);
 
 	spaceStation.AddMesh(new Mesh("SpaceStation", 0.5f));
-	spaceStation.GetMeshes()[0]->LoadVertices("../../My assets/SpaceStation_Data", XMFLOAT4(0.0f, 0.0f, 0.0f, 0.0f));
-	hr = spaceStation.GetMeshes()[0]->CreateVertexShader(myDevice, VertexShader, sizeof(VertexShader));
-	hr = spaceStation.GetMeshes()[0]->CreatePixelShader(myDevice, PixelShader, sizeof(PixelShader));
+	spaceStation.GetMeshes()[0]->LoadVertices("../../My assets/SpaceStation_Data");
+	hr = spaceStation.GetMeshes()[0]->CreateVertexShader(myDevice, NormalMappingVertexShader, sizeof(NormalMappingVertexShader));
+	hr = spaceStation.GetMeshes()[0]->CreatePixelShader(myDevice, NormalMappingPixelShader, sizeof(NormalMappingPixelShader));
 	hr = spaceStation.GetMeshes()[0]->CreateVertexBuffer(myDevice);
 	hr = spaceStation.GetMeshes()[0]->CreateIndexBuffer(myDevice);
-	hr = spaceStation.GetMeshes()[0]->CreateShaderResourceView(myDevice, L"../../My assets/Textures/SpaceStation01/RT_2D_Station2_Spec.dds");
+	hr = spaceStation.GetMeshes()[0]->CreateShaderResourceView(myDevice, L"../../My assets/Textures/SpaceStation01/RT_2D_Station2_Diffuse.dds");
+	hr = spaceStation.GetMeshes()[0]->CreateShaderResourceView(myDevice, L"../../My assets/Textures/SpaceStation01/RT_2D_Station2_Normal.dds");
 	hr = spaceStation.GetMeshes()[0]->CreateSamplerState(myDevice);
 
-	venatorStarDestroyer.AddMesh(new Mesh("VenatorStarDestroyer", 0.003f));
-	venatorStarDestroyer.GetMeshes()[0]->LoadVertices("../../My assets/Venator_Data", XMFLOAT4(0.0f, 0.0f, 0.0f, 0.0f));
+	venatorStarDestroyer.AddMesh(new Mesh("VenatorStarDestroyer", 0.0025f));
+	venatorStarDestroyer.GetMeshes()[0]->LoadVertices("../../My assets/Venator_Data");
 	hr = venatorStarDestroyer.GetMeshes()[0]->CreateVertexShader(myDevice, HyperSpeedVertexShader, sizeof(HyperSpeedVertexShader));
 	hr = venatorStarDestroyer.GetMeshes()[0]->CreatePixelShader(myDevice, HyperSpeedPixelShader, sizeof(HyperSpeedPixelShader));
 	hr = venatorStarDestroyer.GetMeshes()[0]->CreateVertexBuffer(myDevice);
@@ -375,8 +374,8 @@ void Graphics::KeyboardHandle(float delta)
 	if (GetAsyncKeyState('6')) { camera.DecreaseFarPlane((offset + 10.0f) * delta); }
 	// waviness
 	if (GetAsyncKeyState('F') & 0x1) { wave = !wave; }
-	// black and white
-	if (GetAsyncKeyState('G') & 0x1) { blackWhite = !blackWhite; }
+	// enable normal mapping
+	if (GetAsyncKeyState('N') & 0x1) { normalMapping = !normalMapping; }
 	// reset camera
 	if (GetAsyncKeyState('R') & 0x1) { camera.SetPosition(0.0f, 20.0f, -20.0f); camera.SetProjection(90.0f, 1.0f, 0.1f, 500.0f); }
 
@@ -401,7 +400,7 @@ void Graphics::ConstantBufferSetUp(const XMMATRIX& worldMatrix, Camera& camera)
 	XMStoreFloat4(&light_cb.lightNormal[0], dLight.GetNormalVectorNormalized());
 	XMStoreFloat4(&light_cb.lightColor[0], dLight.GetColor());
 	// point light
-	pLight.SetWorldMatrix(XMMatrixRotationY(0.01f));
+	pLight.SetWorldMatrix(XMMatrixIdentity());
 	pLight.UpdatePosition();
 	XMStoreFloat4(&light_cb.lightPos[1], pLight.GetPositionVector());
 	XMStoreFloat4(&light_cb.lightNormal[1], pLight.GetNormalVectorNormalized());
@@ -410,20 +409,11 @@ void Graphics::ConstantBufferSetUp(const XMMATRIX& worldMatrix, Camera& camera)
 	sLight.SetPosition(radius * 5.0f, 1.0f, radius * 5.0f);
 	sLight.SetWorldMatrix(XMMatrixRotationY(0.001f));
 	sLight.UpdatePosition();
-	XMVECTOR coneRatio = XMVectorSet(0.78f, 0.48f, (float)blackWhite, 0.0f);
+	XMVECTOR coneRatio = XMVectorSet(0.78f, 0.48f, (float)normalMapping, 0.0f);
 	XMStoreFloat4(&light_cb.coneRatio, coneRatio);
 	XMStoreFloat4(&light_cb.lightPos[2], sLight.GetPositionVector());
 	XMStoreFloat4(&light_cb.lightNormal[2], sLight.GetNormalVectorNormalized());
 	XMStoreFloat4(&light_cb.lightColor[2], sLight.GetColor());
-	// point light radius
-	if (radius > 10.0f)
-		shrink = true;
-	else if (radius <= 1.0f)
-		shrink = false;
-	if (shrink)
-		radius -= 0.01f;
-	else
-		radius += 0.01f;
 	XMVECTOR lightRad = XMVectorSet(radius, rot, (float)elapsedTime, (float)wave);
 	XMStoreFloat4(&light_cb.lightRadius, lightRad);
 

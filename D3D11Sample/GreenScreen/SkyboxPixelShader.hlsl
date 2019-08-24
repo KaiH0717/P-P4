@@ -36,11 +36,5 @@ cbuffer Light_ConstantBuffer : register(b1)
 float4 main(OutputVertex inputPixel) : SV_TARGET
 {
     float4 outputColor = txDiffuse.Sample(samLinear, (float3) inputPixel.localPosition);
-    
-    if (coneRatio.z == 1.0f)
-    {
-        float grey = (outputColor.x + outputColor.y + outputColor.z) / 3.0f;
-        outputColor = float4(grey, grey, grey, 1.0f);
-    }
     return outputColor;
 }

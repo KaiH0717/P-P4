@@ -55,12 +55,5 @@ float4 main(OutputVertex inputPixel) : SV_TARGET
     float intensity = saturate(pow(dot(inputPixel.normal, halfVector), 2.2f));
     float4 color4 = lerp(float4(0.0f, 0.0f, 0.0f, 1.0f), lightColor[0], intensity * 1.25f);
     float4 outputColor = (color1 + color2 + color3 + color4) * txDiffuse.Sample(samLinear, inputPixel.tex);
-    if (coneRatio.z == 1.0f)
-    {
-        float grey = (outputColor.x + outputColor.y + outputColor.z) / 3.0f;
-        outputColor = float4(grey, grey, grey, 1.0f);
-    }
-    //inputPixel.tex.x += sin(inputPixel.tex.y * 0.1f + lightRadius.z) * lightRadius.w;
-    //inputPixel.tex.y += cos(inputPixel.tex.x * 0.1f + lightRadius.z) * lightRadius.w;
     return outputColor;
 }

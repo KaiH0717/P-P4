@@ -50,6 +50,7 @@ class Graphics
 	ID3D11Device* myDevice = nullptr;
 	IDXGISwapChain* mySwapChain = nullptr;
 	ID3D11DeviceContext* myContext = nullptr;
+	ID3D11RasterizerState* myRasterizer = nullptr;
 
 	// D3D11 resource variables
 	ID3D11Buffer* matrix_id3d11buffer;
@@ -59,8 +60,7 @@ class Graphics
 	Matrix_ConstantBuffer matrix_cb;
 	Light_ConstantBuffer light_cb;
 
-	bool shrink = false;
-	float radius = 5.0f;
+	float radius = 15.0f;
 	Camera camera;
 	Camera camera1;
 	Light dLight;
@@ -69,8 +69,8 @@ class Graphics
 
 	XTime time;
 	double elapsedTime;
-	bool wave;
-	bool blackWhite;
+	bool wave = false;
+	bool normalMapping = false;
 
 	Model skyBox;
 	Model corvette;
