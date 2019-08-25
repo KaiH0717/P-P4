@@ -9,6 +9,8 @@
 #include "HyperSpeedPixelShader.csh"
 #include "NormalMappingVertexShader.csh"
 #include "NormalMappingPixelShader.csh"
+#include "AcclamatorVertexShader.csh"
+#include "AcclamatorPixelShader.csh"
 
 #define RAND_COLOR XMFLOAT4(rand()/float(RAND_MAX),rand()/float(RAND_MAX),rand()/float(RAND_MAX),1.0f)
 
@@ -142,7 +144,7 @@ void Graphics::Render(GW::SYSTEM::GWindow* attatchPoint)
 			arc170.Draw(myContext, &viewPort[0]);
 			modelPositions[1] = arc170.GetWorldMatrix().r[3];
 
-			temp = XMMatrixMultiply(XMMatrixRotationY(/*(float)elapsedtime*/0), XMMatrixTranslation(0.0f, 30.0f, 0.0f));
+			temp = XMMatrixMultiply(XMMatrixRotationY((float)elapsedTime), XMMatrixTranslation(-50.0f, 30.0f, 0.0f));
 			spaceStation.SetWorldMatrix(temp);
 			ConstantBufferSetUp(spaceStation.GetWorldMatrix(), camera);
 			spaceStation.Draw(myContext, &viewPort[0]);
@@ -150,9 +152,23 @@ void Graphics::Render(GW::SYSTEM::GWindow* attatchPoint)
 
 			temp = XMMatrixMultiply(XMMatrixRotationX(30.0f), XMMatrixTranslation(0.0f, 0.0f, 0.0f));
 			venatorStarDestroyer.SetWorldMatrix(temp);
+			XMStoreFloat4x4(&matrix_cb.world[1], XMMatrixMultiply(XMMatrixRotationX(30.0f), XMMatrixTranslation(-40.0f, 0.0f, 40.0f)));
+			XMStoreFloat4x4(&matrix_cb.world[2], XMMatrixMultiply(XMMatrixRotationX(30.0f), XMMatrixTranslation(-40.0f, 0.0f, -40.0f)));
+			XMStoreFloat4x4(&matrix_cb.world[3], XMMatrixMultiply(XMMatrixRotationX(30.0f), XMMatrixTranslation(-80.0f, 0.0f, 80.0f)));
+			XMStoreFloat4x4(&matrix_cb.world[4], XMMatrixMultiply(XMMatrixRotationX(30.0f), XMMatrixTranslation(-80.0f, 0.0f, -80.0f)));
 			ConstantBufferSetUp(venatorStarDestroyer.GetWorldMatrix(), camera);
 			venatorStarDestroyer.DrawInstanced(myContext, &viewPort[0], 5);
 			modelPositions[3] = venatorStarDestroyer.GetWorldMatrix().r[3];
+
+			temp = XMMatrixMultiply(XMMatrixRotationX(30.0f), XMMatrixTranslation(0.0f, 30.0f, 0.0f));
+			acclamatorStarDestroyer.SetWorldMatrix(temp);
+			XMStoreFloat4x4(&matrix_cb.world[1], XMMatrixMultiply(XMMatrixRotationX(30.0f), XMMatrixTranslation(-40.0f, 20.0f, 30.0f)));
+			XMStoreFloat4x4(&matrix_cb.world[2], XMMatrixMultiply(XMMatrixRotationX(30.0f), XMMatrixTranslation(-50.0f, 25.0f, -50.0f)));
+			XMStoreFloat4x4(&matrix_cb.world[3], XMMatrixMultiply(XMMatrixRotationX(30.0f), XMMatrixTranslation(-90.0f, 30.0f, 60.0f)));
+			XMStoreFloat4x4(&matrix_cb.world[4], XMMatrixMultiply(XMMatrixRotationX(30.0f), XMMatrixTranslation(-90.0f, 35.0f, -25.0f)));
+			ConstantBufferSetUp(acclamatorStarDestroyer.GetWorldMatrix(), camera);
+			acclamatorStarDestroyer.DrawInstanced(myContext, &viewPort[0], 5);
+			modelPositions[4] = acclamatorStarDestroyer.GetWorldMatrix().r[3];
 
 			// second view port draw calls
 			skyBox.SetWorldMatrix(XMMatrixTranslation(camera1.GetWorldPosition().x, camera1.GetWorldPosition().y, camera1.GetWorldPosition().z));
@@ -166,7 +182,6 @@ void Graphics::Render(GW::SYSTEM::GWindow* attatchPoint)
 				myDepthStencilView->Release();
 			}
 
-			myContext->IASetInputLayout(inputLayout);
 			temp = XMMatrixMultiply(XMMatrixRotationY(-160.0f * 0.01f), XMMatrixTranslation(50.0f, 0.0f, 0.0f));
 			corvette.SetWorldMatrix(temp);
 			ConstantBufferSetUp(corvette.GetWorldMatrix(), camera1);
@@ -177,15 +192,28 @@ void Graphics::Render(GW::SYSTEM::GWindow* attatchPoint)
 			ConstantBufferSetUp(arc170.GetWorldMatrix(), camera1);
 			arc170.Draw(myContext, &viewPort[1]);
 
-			temp = XMMatrixMultiply(XMMatrixRotationY(/*(float)elapsedTime*/0), XMMatrixTranslation(0.0f, 30.0f, 0.0f));
+			temp = XMMatrixMultiply(XMMatrixRotationY((float)elapsedTime), XMMatrixTranslation(-50.0f, 30.0f, 0.0f));
 			spaceStation.SetWorldMatrix(temp);
 			ConstantBufferSetUp(spaceStation.GetWorldMatrix(), camera1);
 			spaceStation.Draw(myContext, &viewPort[1]);
 
 			temp = XMMatrixMultiply(XMMatrixRotationX(30.0f), XMMatrixTranslation(0.0f, 0.0f, 0.0f));
 			venatorStarDestroyer.SetWorldMatrix(temp);
+			XMStoreFloat4x4(&matrix_cb.world[1], XMMatrixMultiply(XMMatrixRotationX(30.0f), XMMatrixTranslation(-40.0f, 0.0f, 40.0f)));
+			XMStoreFloat4x4(&matrix_cb.world[2], XMMatrixMultiply(XMMatrixRotationX(30.0f), XMMatrixTranslation(-40.0f, 0.0f, -40.0f)));
+			XMStoreFloat4x4(&matrix_cb.world[3], XMMatrixMultiply(XMMatrixRotationX(30.0f), XMMatrixTranslation(-80.0f, 0.0f, 80.0f)));
+			XMStoreFloat4x4(&matrix_cb.world[4], XMMatrixMultiply(XMMatrixRotationX(30.0f), XMMatrixTranslation(-80.0f, 0.0f, -80.0f)));
 			ConstantBufferSetUp(venatorStarDestroyer.GetWorldMatrix(), camera1);
 			venatorStarDestroyer.DrawInstanced(myContext, &viewPort[1], 5);
+
+			temp = XMMatrixMultiply(XMMatrixRotationX(30.0f), XMMatrixTranslation(0.0f, 30.0f, 0.0f));
+			acclamatorStarDestroyer.SetWorldMatrix(temp);
+			XMStoreFloat4x4(&matrix_cb.world[1], XMMatrixMultiply(XMMatrixRotationX(30.0f), XMMatrixTranslation(-40.0f, 20.0f, 30.0f)));
+			XMStoreFloat4x4(&matrix_cb.world[2], XMMatrixMultiply(XMMatrixRotationX(30.0f), XMMatrixTranslation(-50.0f, 25.0f, -50.0f)));
+			XMStoreFloat4x4(&matrix_cb.world[3], XMMatrixMultiply(XMMatrixRotationX(30.0f), XMMatrixTranslation(-90.0f, 30.0f, 60.0f)));
+			XMStoreFloat4x4(&matrix_cb.world[4], XMMatrixMultiply(XMMatrixRotationX(30.0f), XMMatrixTranslation(-90.0f, 35.0f, -25.0f)));
+			ConstantBufferSetUp(acclamatorStarDestroyer.GetWorldMatrix(), camera1);
+			acclamatorStarDestroyer.DrawInstanced(myContext, &viewPort[1], 5);
 
 			// Present Backbuffer using Swapchain object
 			// Framerate is currently unlocked, we suggest "MSI Afterburner" to track your current FPS and memory usage.
@@ -258,17 +286,39 @@ HRESULT Graphics::InitializeDevice()
 	hr = venatorStarDestroyer.GetMeshes()[0]->CreateVertexBuffer(myDevice);
 	hr = venatorStarDestroyer.GetMeshes()[0]->CreateIndexBuffer(myDevice);
 	hr = venatorStarDestroyer.GetMeshes()[0]->CreateShaderResourceView(myDevice, L"../../My assets/Textures/VenatorStarDestroyer/ReV_venator.dds");
+	hr = venatorStarDestroyer.GetMeshes()[0]->CreateShaderResourceView(myDevice, L"../../My assets/Textures/VenatorStarDestroyer/rep_ven_turrets.dds");
+	hr = venatorStarDestroyer.GetMeshes()[0]->CreateShaderResourceView(myDevice, L"../../My assets/Textures/VenatorStarDestroyer/EngineGlow.dds");
 	hr = venatorStarDestroyer.GetMeshes()[0]->CreateSamplerState(myDevice);
 
-	XMStoreFloat4x4(&matrix_cb.world[1], XMMatrixMultiply(XMMatrixRotationX(30.0f), XMMatrixTranslation(-40.0f, 0.0f, 40.0f)));
-	XMStoreFloat4x4(&matrix_cb.world[2], XMMatrixMultiply(XMMatrixRotationX(30.0f), XMMatrixTranslation(-40.0f, 0.0f, -40.0f)));
-	XMStoreFloat4x4(&matrix_cb.world[3], XMMatrixMultiply(XMMatrixRotationX(30.0f), XMMatrixTranslation(-80.0f, 0.0f, 80.0f)));
-	XMStoreFloat4x4(&matrix_cb.world[4], XMMatrixMultiply(XMMatrixRotationX(30.0f), XMMatrixTranslation(-80.0f, 0.0f, -80.0f)));
+	acclamatorStarDestroyer.AddMesh(new Mesh("AcclamatorStarDestroyer", 0.0025f));
+	acclamatorStarDestroyer.GetMeshes()[0]->LoadVertices("../../My assets/Acclamator_Data");
+	hr = acclamatorStarDestroyer.GetMeshes()[0]->CreateVertexShader(myDevice, AcclamatorVertexShader, sizeof(AcclamatorVertexShader));
+	hr = acclamatorStarDestroyer.GetMeshes()[0]->CreatePixelShader(myDevice, AcclamatorPixelShader, sizeof(AcclamatorPixelShader));
+	hr = acclamatorStarDestroyer.GetMeshes()[0]->CreateVertexBuffer(myDevice);
+	hr = acclamatorStarDestroyer.GetMeshes()[0]->CreateIndexBuffer(myDevice);
+	hr = acclamatorStarDestroyer.GetMeshes()[0]->CreateShaderResourceView(myDevice, L"../../My assets/Textures/VenatorStarDestroyer/ReV_venator.dds");
+	hr = acclamatorStarDestroyer.GetMeshes()[0]->CreateShaderResourceView(myDevice, L"../../My assets/Textures/VenatorStarDestroyer/rep_ven_turrets.dds");
+	hr = acclamatorStarDestroyer.GetMeshes()[0]->CreateSamplerState(myDevice);
 
 	modelPositions.push_back(corvette.GetWorldMatrix().r[3]);
 	modelPositions.push_back(arc170.GetWorldMatrix().r[3]);
 	modelPositions.push_back(spaceStation.GetWorldMatrix().r[3]);
 	modelPositions.push_back(venatorStarDestroyer.GetWorldMatrix().r[3]);
+	modelPositions.push_back(acclamatorStarDestroyer.GetWorldMatrix().r[3]);
+
+	XMStoreFloat4x4(&matrix_cb.world[1], XMMatrixMultiply(XMMatrixRotationX(30.0f), XMMatrixTranslation(-40.0f, 0.0f, 40.0f)));
+	XMStoreFloat4x4(&matrix_cb.world[2], XMMatrixMultiply(XMMatrixRotationX(30.0f), XMMatrixTranslation(-40.0f, 0.0f, -40.0f)));
+	XMStoreFloat4x4(&matrix_cb.world[3], XMMatrixMultiply(XMMatrixRotationX(30.0f), XMMatrixTranslation(-80.0f, 0.0f, 80.0f)));
+	XMStoreFloat4x4(&matrix_cb.world[4], XMMatrixMultiply(XMMatrixRotationX(30.0f), XMMatrixTranslation(-80.0f, 0.0f, -80.0f)));
+	modelPositions.push_back(XMLoadFloat4x4(&matrix_cb.world[1]).r[3]);
+	modelPositions.push_back(XMLoadFloat4x4(&matrix_cb.world[2]).r[3]);
+	modelPositions.push_back(XMLoadFloat4x4(&matrix_cb.world[3]).r[3]);
+	modelPositions.push_back(XMLoadFloat4x4(&matrix_cb.world[4]).r[3]);
+
+	XMStoreFloat4x4(&matrix_cb.world[1], XMMatrixMultiply(XMMatrixRotationX(30.0f), XMMatrixTranslation(-40.0f, 20.0f, 30.0f)));
+	XMStoreFloat4x4(&matrix_cb.world[2], XMMatrixMultiply(XMMatrixRotationX(30.0f), XMMatrixTranslation(-50.0f, 25.0f, -50.0f)));
+	XMStoreFloat4x4(&matrix_cb.world[3], XMMatrixMultiply(XMMatrixRotationX(30.0f), XMMatrixTranslation(-90.0f, 30.0f, 60.0f)));
+	XMStoreFloat4x4(&matrix_cb.world[4], XMMatrixMultiply(XMMatrixRotationX(30.0f), XMMatrixTranslation(-90.0f, 35.0f, -25.0f)));
 	modelPositions.push_back(XMLoadFloat4x4(&matrix_cb.world[1]).r[3]);
 	modelPositions.push_back(XMLoadFloat4x4(&matrix_cb.world[2]).r[3]);
 	modelPositions.push_back(XMLoadFloat4x4(&matrix_cb.world[3]).r[3]);

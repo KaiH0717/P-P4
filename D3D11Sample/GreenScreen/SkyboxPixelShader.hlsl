@@ -1,6 +1,6 @@
 TextureCube txDiffuse : register(t0);
 
-SamplerState samLinear : register(s0);
+SamplerState sample_state : register(s0);
 
 struct OutputVertex
 {
@@ -35,6 +35,6 @@ cbuffer Light_ConstantBuffer : register(b1)
 
 float4 main(OutputVertex inputPixel) : SV_TARGET
 {
-    float4 outputColor = txDiffuse.Sample(samLinear, (float3) inputPixel.localPosition);
+    float4 outputColor = txDiffuse.Sample(sample_state, (float3) inputPixel.localPosition);
     return outputColor;
 }

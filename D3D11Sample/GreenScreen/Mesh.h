@@ -73,7 +73,7 @@ struct Mesh
 	HRESULT CreateSamplerState(ID3D11Device* device);
 };
 
-inline Mesh::Mesh(char* name, float scale)
+inline Mesh::Mesh(char* name, float scale = 1.0f)
 {
 	this->name = name;
 	this->scale = scale;

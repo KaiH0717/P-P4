@@ -8,7 +8,7 @@ void Model::SetPipeline(ID3D11DeviceContext* context, unsigned int index)
 	context->IASetIndexBuffer(meshes[index]->indexBuffer, DXGI_FORMAT_R32_UINT, 0);
 	context->VSSetShader(meshes[index]->vertexShader, nullptr, 0);
 	context->PSSetShader(meshes[index]->pixelShader, nullptr, 0);
-	context->PSSetShaderResources(0, meshes[index]->shaderResourceViews.size(), meshes[index]->shaderResourceViews.data());
+	context->PSSetShaderResources(0, (UINT)meshes[index]->shaderResourceViews.size(), meshes[index]->shaderResourceViews.data());
 	context->PSSetSamplers(0, 1, &meshes[index]->sampler);
 }
 
@@ -48,7 +48,7 @@ void Model::Draw(ID3D11DeviceContext* context, D3D11_VIEWPORT* viewPort)
 	{
 		for (size_t i = 0; i < meshes.size(); i++)
 		{
-			SetPipeline(context, i);
+			SetPipeline(context, (unsigned int)i);
 			context->RSSetViewports(1, viewPort);
 			context->DrawIndexed(meshes[i]->indexCount, 0, 0);
 		}
@@ -57,7 +57,7 @@ void Model::Draw(ID3D11DeviceContext* context, D3D11_VIEWPORT* viewPort)
 
 void Model::Draw(ID3D11DeviceContext* context, unsigned int index, D3D11_VIEWPORT* viewPort)
 {
-	if (context && (index >= 0 && index < meshes.size()))
+	if (context && (index >= 0 && index < (unsigned int)meshes.size()))
 	{
 		SetPipeline(context, index);
 		context->RSSetViewports(1, viewPort);
@@ -71,7 +71,7 @@ void Model::DrawInstanced(ID3D11DeviceContext* context, D3D11_VIEWPORT* viewPort
 	{
 		for (size_t i = 0; i < meshes.size(); i++)
 		{
-			SetPipeline(context, i);
+			SetPipeline(context, (unsigned int)i);
 			context->RSSetViewports(1, viewPort);
 			context->DrawIndexedInstanced(meshes[i]->indexCount, numberOfInstance, 0, 0, 0);
 		}

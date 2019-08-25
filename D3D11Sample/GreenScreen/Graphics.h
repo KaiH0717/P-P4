@@ -71,12 +71,14 @@ class Graphics
 	double elapsedTime;
 	bool wave = false;
 	bool normalMapping = false;
+	bool multiTexture = false;
 
 	Model skyBox;
 	Model corvette;
 	Model arc170;
 	Model spaceStation;
 	Model venatorStarDestroyer;
+	Model acclamatorStarDestroyer;
 
 	std::vector<XMVECTOR> modelPositions;
 	unsigned int modelID = 0;

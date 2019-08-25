@@ -1,5 +1,5 @@
 Texture2D txDiffuse : register(t0);
-SamplerState samLinear : register(s0);
+SamplerState sample_state : register(s0);
 
 struct OutputVertex
 {
@@ -54,6 +54,9 @@ float4 main(OutputVertex inputPixel) : SV_TARGET
     float3 halfVector = normalize(((float3) -lightNor[0]) + viewDir);
     float intensity = saturate(pow(dot(inputPixel.normal, halfVector), 2.2f));
     float4 color4 = lerp(float4(0.0f, 0.0f, 0.0f, 1.0f), lightColor[0], intensity * 1.25f);
-    float4 outputColor = (color1 + color2 + color3 + color4) * txDiffuse.Sample(samLinear, inputPixel.tex);
+    float4 outputColor = (color1 + color2 + color3 + color4) * txDiffuse.Sample(sample_state, inputPixel.tex);
+    // discard any pixel less than 0.2f
+    if (outputColor.a < 0.2f)
+        discard;
     return outputColor;
 }
