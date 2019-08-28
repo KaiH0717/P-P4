@@ -34,18 +34,18 @@ cbuffer Light_ConstantBuffer : register(b1)
 float4 main(OutputVertex inputPixel) : SV_TARGET
 {
     // directional lighting
-    float ratio = saturate(dot((float3) -lightNor[0], normalize(inputPixel.normal)) + 0.45f);
+    float ratio = saturate(dot((float3) -lightNor[0], normalize(inputPixel.normal)));
     float4 color1 = lerp(float4(0.0f, 0.0f, 0.0f, 1.0f), lightColor[0], ratio);
     // point lighting
     float3 pointLightDir = (float3) normalize(lightPos[1] - inputPixel.worldPosition);
-    float pointLightRatio = saturate(dot(pointLightDir, inputPixel.normal) + 0.45f);
+    float pointLightRatio = saturate(dot(pointLightDir, inputPixel.normal));
     float attenuation = 1.0f - saturate((length(lightPos[1] - inputPixel.worldPosition) / lightRadius.x));
     pointLightRatio = attenuation * attenuation * pointLightRatio;
     float4 color2 = lerp(float4(0.0f, 0.0f, 0.0f, 1.0f), lightColor[1], pointLightRatio);
     // spot light
     float3 spotLightDir = (float3) normalize(lightPos[2] - inputPixel.worldPosition);
     float surfaceRatio = saturate(dot(spotLightDir, (float3) -lightNor[2]));
-    float spotLightRatio = saturate(dot(spotLightDir, inputPixel.normal) + 0.45f);
+    float spotLightRatio = saturate(dot(spotLightDir, inputPixel.normal));
     attenuation = 1.0f - saturate((coneRatio.x - surfaceRatio) / (coneRatio.x - coneRatio.y));
     spotLightRatio = attenuation * attenuation * spotLightRatio;
     float4 color3 = lerp(float4(0.0f, 0.0f, 0.0f, 1.0f), lightColor[2], spotLightRatio);

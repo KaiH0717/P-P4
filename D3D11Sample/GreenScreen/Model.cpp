@@ -42,7 +42,16 @@ void Model::AddMesh(Mesh* mesh)
 	}
 }
 
-void Model::Draw(ID3D11DeviceContext* context, D3D11_VIEWPORT* viewPort)
+void Model::AddMesh(Mesh* mesh, const char* fileName)
+{
+	if (mesh)
+	{
+		meshes.push_back(mesh);
+		this->GetMeshes()[static_cast<unsigned int>(meshes.size() - 1)]->LoadVertices(fileName);
+	}
+}
+
+void Model::DrawIndexed(ID3D11DeviceContext* context, D3D11_VIEWPORT* viewPort)
 {
 	if (context)
 	{
@@ -55,17 +64,7 @@ void Model::Draw(ID3D11DeviceContext* context, D3D11_VIEWPORT* viewPort)
 	}
 }
 
-void Model::Draw(ID3D11DeviceContext* context, unsigned int index, D3D11_VIEWPORT* viewPort)
-{
-	if (context && (index >= 0 && index < (unsigned int)meshes.size()))
-	{
-		SetPipeline(context, index);
-		context->RSSetViewports(1, viewPort);
-		context->DrawIndexed(meshes[index]->vertexCount, 0, 0);
-	}
-}
-
-void Model::DrawInstanced(ID3D11DeviceContext* context, D3D11_VIEWPORT* viewPort, unsigned int numberOfInstance)
+void Model::DrawIndexInstanced(ID3D11DeviceContext* context, D3D11_VIEWPORT* viewPort, unsigned int numberOfInstance)
 {
 	if (context)
 	{

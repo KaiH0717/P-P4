@@ -30,12 +30,15 @@ public:
 	void SetName(char* name);
 	void SetWorldMatrix(const XMMATRIX& world);
 
+	//////////////////////////////
+	// Methods
+	//////////////////////////////
 	void AddMesh(Mesh* mesh);
+	void AddMesh(Mesh* mesh, const char* fileName);
 
 	//////////////////////////////
 	// draw calls
 	//////////////////////////////
-	void Draw(ID3D11DeviceContext* context, D3D11_VIEWPORT* viewPort);
-	void Draw(ID3D11DeviceContext* context, unsigned int index, D3D11_VIEWPORT* viewPort);
-	void DrawInstanced(ID3D11DeviceContext* context, D3D11_VIEWPORT* viewPort, unsigned int numberOfInstance);
+	void DrawIndexed(ID3D11DeviceContext* context, D3D11_VIEWPORT* viewPort);
+	void DrawIndexInstanced(ID3D11DeviceContext* context, D3D11_VIEWPORT* viewPort, unsigned int numberOfInstance);
 };

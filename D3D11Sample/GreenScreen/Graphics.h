@@ -10,9 +10,6 @@
 // To add a library just include the relevant "Interface" & add any related *.cpp files from the "Source" folder to the Gateware filter->.
 // Gateware comes with MSDN style docs too: "Gateware\Documentation\html\index.html"
 
-// Include DirectX11 for interface access
-#include <d3d11.h>
-
 // include my own files and other helpful files
 #include "Camera.h"
 #include "Model.h"
@@ -22,7 +19,6 @@
 
 struct Matrix_ConstantBuffer
 {
-	// storage type for permenant use
 	XMFLOAT4X4 world[5];
 	XMFLOAT4X4 view;
 	XMFLOAT4X4 projection;
@@ -50,9 +46,9 @@ class Graphics
 	ID3D11Device* myDevice = nullptr;
 	IDXGISwapChain* mySwapChain = nullptr;
 	ID3D11DeviceContext* myContext = nullptr;
-	ID3D11RasterizerState* myRasterizer = nullptr;
 
 	// D3D11 resource variables
+	ID3D11BlendState* blendState = nullptr;
 	ID3D11Buffer* matrix_id3d11buffer;
 	ID3D11Buffer* light_id3d11buffer;
 	ID3D11InputLayout* inputLayout = nullptr;
@@ -60,7 +56,10 @@ class Graphics
 	Matrix_ConstantBuffer matrix_cb;
 	Light_ConstantBuffer light_cb;
 
-	float radius = 15.0f;
+	bool lockOn = false;
+	XMVECTOR cameraTarget;
+
+	float radius = 10000.0f;
 	Camera camera;
 	Camera camera1;
 	Light dLight;
@@ -74,11 +73,17 @@ class Graphics
 	bool multiTexture = false;
 
 	Model skyBox;
-	Model corvette;
-	Model arc170;
+	Model ywing;
 	Model spaceStation;
 	Model venatorStarDestroyer;
 	Model acclamatorStarDestroyer;
+	Model sun;
+	Model earth;
+	Model moon;
+	Model lucrehulk;
+	Model rock;
+	Model astroid;
+	Model planet01;
 
 	std::vector<XMVECTOR> modelPositions;
 	unsigned int modelID = 0;

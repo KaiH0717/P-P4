@@ -43,6 +43,7 @@ struct Mesh
 	//////////////////////////////
 	ID3D11VertexShader* vertexShader = nullptr;
 	ID3D11PixelShader* pixelShader = nullptr;
+	ID3D11GeometryShader* geometryShader = nullptr;
 
 	//////////////////////////////
 	// textures
@@ -69,6 +70,7 @@ struct Mesh
 	HRESULT CreateIndexBuffer(ID3D11Device* device);
 	HRESULT CreateVertexShader(ID3D11Device* device, const void* shaderBytecode, SIZE_T bytecodeLength);
 	HRESULT CreatePixelShader(ID3D11Device* device, const void* shaderBytecode, SIZE_T bytecodeLength);
+	HRESULT CreateGeometryShader(ID3D11Device* device, const void* shaderBytecode, SIZE_T bytecodeLength);
 	HRESULT CreateShaderResourceView(ID3D11Device* device, const wchar_t* fileName);
 	HRESULT CreateSamplerState(ID3D11Device* device);
 };
@@ -94,11 +96,9 @@ inline Mesh::~Mesh()
 	if (indexBuffer) { indexBuffer->Release(); indexBuffer = nullptr; }
 	if (vertexShader) { vertexShader->Release(); vertexShader = nullptr; }
 	if (pixelShader) { pixelShader->Release(); pixelShader = nullptr; }
+	if (geometryShader) { geometryShader->Release(); geometryShader = nullptr; }
 	if (sampler) { sampler->Release(); sampler = nullptr; }
-	for (size_t i = 0; i < shaderResourceViews.size(); i++)
-	{
-		shaderResourceViews[i]->Release();
-	}
+	for (size_t i = 0; i < shaderResourceViews.size(); i++) { if (shaderResourceViews[i]) { shaderResourceViews[i]->Release(); } }
 }
 
 inline void Mesh::LoadVertices(const char* fileName)
@@ -194,6 +194,15 @@ inline HRESULT Mesh::CreatePixelShader(ID3D11Device* device, const void* shaderB
 	if (device)
 	{
 		return device->CreatePixelShader(shaderBytecode, bytecodeLength, nullptr, &this->pixelShader);
+	}
+	return E_INVALIDARG;
+}
+
+inline HRESULT Mesh::CreateGeometryShader(ID3D11Device* device, const void* shaderBytecode, SIZE_T bytecodeLength)
+{
+	if (device)
+	{
+		return device->CreateGeometryShader(shaderBytecode, bytecodeLength, nullptr, &this->geometryShader);
 	}
 	return E_INVALIDARG;
 }
