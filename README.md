@@ -4,15 +4,9 @@ Project and portfolio 4
 Camera controls:
 Movement: W, A, S, D;
 Rotate: I, J, K, L;
-Increase FOV: 1;
-Decrease FOV: 2;
-Increase Near plane: 3;
-Decrease Near plane: 4;
-Increase Far plane: 5;
-Decrease Far plane: 6;
 Reset camera: R;
+Toggle Normal mapping for certain models(other models don't have normal map): N 
+Camera turn-to/look-at : SPACE (Resetting camera will turn off lock on)
 
-Toggle Hyperspeed for star ships: F;
-Toggle black/white scene: G;
-
-Make sure you build the solution before running it, my .vs file was too big so I delete them.
+On launch normal mapping is disabled.
+Ground plane for normal map is below camera eye, so just look down. 
