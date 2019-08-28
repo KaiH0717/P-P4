@@ -1,6 +1,7 @@
 # P-P4_Graphics2
 Project and portfolio 4
 
+The .exe is in the solution folder
 Camera controls:
 Movement: W, A, S, D;
 Rotate: I, J, K, L;
