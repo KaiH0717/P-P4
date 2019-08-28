@@ -17,6 +17,7 @@ struct OutputVertex
     float3 normal : NORMAL;
     float2 tex : TEXCOORD;
     float4 worldPosition : WORLDPOSITION;
+    float4 localPosition : LOCALPOSITION;
 };
 
 cbuffer Matrix_ConstantBuffer : register(b0)
@@ -46,10 +47,14 @@ OutputVertex main(InputVertex input, uint instanceID : SV_InstanceID)
     output.position = input.position;
     output.position = mul(output.position, world[instanceID]);
     output.worldPosition = output.position;
+
+    output.tangent = input.tangent;
+    output.tangent = mul(output.tangent, world[instanceID]);
+    output.binormal = input.binormal;
+    output.binormal = mul(output.binormal, world[instanceID]);
     output.normal = input.normal;
     output.normal = mul(float4(output.normal, 0.0f), world[instanceID]).xyz;
-    output.position.x += tan(output.position.y * 0.005f + lightRadius.z) * lightRadius.w;
-    output.position.y += cos(output.position.x * 0.0005f + lightRadius.z) * lightRadius.w;
+
     output.position = mul(output.position, view);
     output.position = mul(output.position, projection);
     output.tex = input.tex;

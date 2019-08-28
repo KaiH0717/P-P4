@@ -84,6 +84,7 @@ class Graphics
 	Model rock;
 	Model astroid;
 	Model planet01;
+	Model plane;
 
 	std::vector<XMVECTOR> modelPositions;
 	unsigned int modelID = 0;

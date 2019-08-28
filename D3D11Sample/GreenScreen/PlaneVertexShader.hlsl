@@ -11,7 +11,7 @@ struct InputVertex
 
 struct OutputVertex
 {
-    float4 position : SV_POSITION;
+    float4 position : POSITION;
     float4 tangent : TANGENT;
     float4 binormal : BINORMAL;
     float3 normal : NORMAL;
@@ -27,18 +27,6 @@ cbuffer Matrix_ConstantBuffer : register(b0)
     float4 cameraPosition;
 };
 
-cbuffer Light_ConstantBuffer : register(b1)
-{
-    // [0] = directional lighting, [1] = point lighting, [2] = spot lighting
-    float4 lightPos[3];
-    float4 lightNor[3];
-    float4 lightColor[3];
-    // x = radius, y = rotation, z = time, w = wavy toggle
-    float4 lightRadius;
-    // x = inner cone ratio, y = outer cone ratio, z = black and white toggle
-    float4 coneRatio;
-}
-
 OutputVertex main(InputVertex input, uint instanceID : SV_InstanceID)
 {
     OutputVertex output = (OutputVertex) 0;
@@ -48,10 +36,6 @@ OutputVertex main(InputVertex input, uint instanceID : SV_InstanceID)
     output.worldPosition = output.position;
     output.normal = input.normal;
     output.normal = mul(float4(output.normal, 0.0f), world[instanceID]).xyz;
-    output.position.x += tan(output.position.y * 0.005f + lightRadius.z) * lightRadius.w;
-    output.position.y += cos(output.position.x * 0.0005f + lightRadius.z) * lightRadius.w;
-    output.position = mul(output.position, view);
-    output.position = mul(output.position, projection);
     output.tex = input.tex;
     return output;
 }

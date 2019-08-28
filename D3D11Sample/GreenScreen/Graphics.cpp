@@ -5,15 +5,15 @@
 #include "PixelShader.csh"
 #include "SkyboxVertexShader.csh"
 #include "SkyboxPixelShader.csh"
-#include "HyperSpeedVertexShader.csh"
-#include "HyperSpeedPixelShader.csh"
 #include "NormalMappingVertexShader.csh"
 #include "NormalMappingPixelShader.csh"
-#include "AcclamatorVertexShader.csh"
-#include "AcclamatorPixelShader.csh"
+#include "ReflectionVertexShader.csh"
+#include "ReflectionPixelShader.csh"
+#include "PlaneVertexShader.csh"
+#include "PlanePixelShader.csh"
+#include "PlaneGeometryShader.csh"
 
 #define RAND_XMFLOAT4 XMFLOAT4(rand()/float(RAND_MAX),rand()/float(RAND_MAX),rand()/float(RAND_MAX),1.0f)
-#define USE_SECOND_VIEWPORT 0
 
 Graphics::Graphics(GW::SYSTEM::GWindow * attatchPoint)
 {
@@ -116,6 +116,7 @@ void Graphics::Render(GW::SYSTEM::GWindow* attatchPoint)
 			KeyboardHandle((float)time.SmoothDelta());
 
 			// draw
+			myContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 			XMMATRIX temp = XMMatrixIdentity();
 			skyBox.SetWorldMatrix(XMMatrixTranslation(camera.GetWorldPosition().x, camera.GetWorldPosition().y, camera.GetWorldPosition().z));
 			ConstantBufferSetUp(skyBox.GetWorldMatrix(), camera);
@@ -138,7 +139,7 @@ void Graphics::Render(GW::SYSTEM::GWindow* attatchPoint)
 			ywing.DrawIndexInstanced(myContext, &viewPort[0], 5);
 			modelPositions[0] = ywing.GetWorldMatrix().r[3];
 
-			temp = XMMatrixMultiply(XMMatrixRotationY((float)elapsedTime * 0.5f), XMMatrixTranslation(-200.0f, 30.0f, 0.0f));
+			temp = XMMatrixMultiply(XMMatrixRotationY((float)elapsedTime * 0.5f), XMMatrixTranslation(0.0f, -100.0f, 0.0f));
 			spaceStation.SetWorldMatrix(temp);
 			ConstantBufferSetUp(spaceStation.GetWorldMatrix(), camera);
 			spaceStation.DrawIndexed(myContext, &viewPort[0]);
@@ -215,52 +216,12 @@ void Graphics::Render(GW::SYSTEM::GWindow* attatchPoint)
 			planet01.DrawIndexed(myContext, &viewPort[0]);
 			modelPositions[11] = planet01.GetWorldMatrix().r[3];
 
-#if USE_SECOND_VIEWPORT
-			// second view port draw calls
-			skyBox.SetWorldMatrix(XMMatrixTranslation(camera1.GetWorldPosition().x, camera1.GetWorldPosition().y, camera1.GetWorldPosition().z));
-			ConstantBufferSetUp(skyBox.GetWorldMatrix(), camera1);
-			skyBox.Draw(myContext, &viewPort[1]);
+			myContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_POINTLIST);
+			temp = XMMatrixTranslation(0.0f, -200.0f, 0.0f);
+			plane.SetWorldMatrix(temp);
+			ConstantBufferSetUp(plane.GetWorldMatrix(), camera);
+			plane.DrawIndexed(myContext, &viewPort[0]);
 
-			// Grab the Z Buffer if one was requested
-			if (G_SUCCESS(mySurface->GetDepthStencilView((void**)& myDepthStencilView)))
-			{
-				myContext->ClearDepthStencilView(myDepthStencilView, D3D11_CLEAR_DEPTH, 1.0f, 0); // clear it to Z exponential Far.
-				myDepthStencilView->Release();
-			}
-
-			temp = XMMatrixMultiply(XMMatrixRotationY(-160.0f * 0.01f), XMMatrixTranslation(50.0f, 0.0f, 0.0f));
-			corvette.SetWorldMatrix(temp);
-			ConstantBufferSetUp(corvette.GetWorldMatrix(), camera1);
-			corvette.Draw(myContext, &viewPort[1]);
-
-			temp = XMMatrixTranslation(-50.0f, 0.0f, 0.0f);
-			arc170.SetWorldMatrix(temp);
-			ConstantBufferSetUp(arc170.GetWorldMatrix(), camera1);
-			arc170.Draw(myContext, &viewPort[1]);
-
-			temp = XMMatrixMultiply(XMMatrixRotationY((float)elapsedTime), XMMatrixTranslation(-200.0f, 30.0f, 0.0f));
-			spaceStation.SetWorldMatrix(temp);
-			ConstantBufferSetUp(spaceStation.GetWorldMatrix(), camera1);
-			spaceStation.Draw(myContext, &viewPort[1]);
-
-			temp = XMMatrixMultiply(XMMatrixRotationX(30.0f), XMMatrixTranslation(0.0f, 0.0f, 0.0f));
-			venatorStarDestroyer.SetWorldMatrix(temp);
-			XMStoreFloat4x4(&matrix_cb.world[1], XMMatrixMultiply(XMMatrixRotationX(30.0f), XMMatrixTranslation(-40.0f, 0.0f, 40.0f)));
-			XMStoreFloat4x4(&matrix_cb.world[2], XMMatrixMultiply(XMMatrixRotationX(30.0f), XMMatrixTranslation(-40.0f, 0.0f, -40.0f)));
-			XMStoreFloat4x4(&matrix_cb.world[3], XMMatrixMultiply(XMMatrixRotationX(30.0f), XMMatrixTranslation(-80.0f, 0.0f, 80.0f)));
-			XMStoreFloat4x4(&matrix_cb.world[4], XMMatrixMultiply(XMMatrixRotationX(30.0f), XMMatrixTranslation(-80.0f, 0.0f, -80.0f)));
-			ConstantBufferSetUp(venatorStarDestroyer.GetWorldMatrix(), camera1);
-			venatorStarDestroyer.DrawInstanced(myContext, &viewPort[1], 5);
-
-			temp = XMMatrixMultiply(XMMatrixRotationX(30.0f), XMMatrixTranslation(0.0f, 30.0f, 0.0f));
-			acclamatorStarDestroyer.SetWorldMatrix(temp);
-			XMStoreFloat4x4(&matrix_cb.world[1], XMMatrixMultiply(XMMatrixRotationX(30.0f), XMMatrixTranslation(-40.0f, 20.0f, 30.0f)));
-			XMStoreFloat4x4(&matrix_cb.world[2], XMMatrixMultiply(XMMatrixRotationX(30.0f), XMMatrixTranslation(-50.0f, 25.0f, -50.0f)));
-			XMStoreFloat4x4(&matrix_cb.world[3], XMMatrixMultiply(XMMatrixRotationX(30.0f), XMMatrixTranslation(-90.0f, 30.0f, 60.0f)));
-			XMStoreFloat4x4(&matrix_cb.world[4], XMMatrixMultiply(XMMatrixRotationX(30.0f), XMMatrixTranslation(-90.0f, 35.0f, -25.0f)));
-			ConstantBufferSetUp(acclamatorStarDestroyer.GetWorldMatrix(), camera1);
-			acclamatorStarDestroyer.DrawInstanced(myContext, &viewPort[1], 5);
-#endif
 			// Present Backbuffer using Swapchain object
 			// Framerate is currently unlocked, we suggest "MSI Afterburner" to track your current FPS and memory usage.
 			mySwapChain->Present(1, 0); // set first argument to 1 to enable vertical refresh sync with display
@@ -287,7 +248,6 @@ HRESULT Graphics::InitializeDevice()
 	hr = myDevice->CreateInputLayout(layout, ARRAYSIZE(layout), VertexShader, sizeof(VertexShader), &inputLayout);
 	// setup pipeline
 	myContext->IASetInputLayout(inputLayout);
-	myContext->IASetPrimitiveTopology(D3D11_PRIMITIVE_TOPOLOGY_TRIANGLELIST);
 	D3D11_BLEND_DESC blendDesc;
 	ZeroMemory(&blendDesc, sizeof(D3D11_BLEND_DESC));
 	blendDesc.RenderTarget[0].BlendEnable = true;
@@ -317,13 +277,12 @@ HRESULT Graphics::InitializeDevice()
 	hr = ywing.GetMeshes()[0]->CreateShaderResourceView(myDevice, L"../../My assets/Textures/Rep_BTLB_Ywing_Gold.dds");
 	hr = ywing.GetMeshes()[0]->CreateSamplerState(myDevice);
 
-	spaceStation.AddMesh(new Mesh("SpaceStation", 1.5f), "../../My assets/SpaceStation_Data");
-	hr = spaceStation.GetMeshes()[0]->CreateVertexShader(myDevice, NormalMappingVertexShader, sizeof(NormalMappingVertexShader));
-	hr = spaceStation.GetMeshes()[0]->CreatePixelShader(myDevice, NormalMappingPixelShader, sizeof(NormalMappingPixelShader));
+	spaceStation.AddMesh(new Mesh("SpaceStation"), "../../My assets/SpaceStation_Data");
+	hr = spaceStation.GetMeshes()[0]->CreateVertexShader(myDevice, ReflectionVertexShader, sizeof(ReflectionVertexShader));
+	hr = spaceStation.GetMeshes()[0]->CreatePixelShader(myDevice, ReflectionPixelShader, sizeof(ReflectionPixelShader));
 	hr = spaceStation.GetMeshes()[0]->CreateVertexBuffer(myDevice);
 	hr = spaceStation.GetMeshes()[0]->CreateIndexBuffer(myDevice);
-	hr = spaceStation.GetMeshes()[0]->CreateShaderResourceView(myDevice, L"../../My assets/Textures/SpaceStation01/RT_2D_Station2_Diffuse.dds");
-	hr = spaceStation.GetMeshes()[0]->CreateShaderResourceView(myDevice, L"../../My assets/Textures/SpaceStation01/RT_2D_Station2_Normal.dds");
+	hr = spaceStation.GetMeshes()[0]->CreateShaderResourceView(myDevice, L"../../My assets/Textures/SPAAAAAAAAAAAAAAAAAAAAACE.dds");
 	hr = spaceStation.GetMeshes()[0]->CreateSamplerState(myDevice);
 
 	venatorStarDestroyer.AddMesh(new Mesh("VenatorStarDestroyer", 0.0025f), "../../My assets/Venator_Data");
@@ -407,6 +366,19 @@ HRESULT Graphics::InitializeDevice()
 	hr = planet01.GetMeshes()[0]->CreateShaderResourceView(myDevice, L"../../My assets/Textures/Planet01/RT_2D_Planet_Normal.dds");
 	hr = planet01.GetMeshes()[0]->CreateSamplerState(myDevice);
 
+	plane.AddMesh(new Mesh("Rock", 100.0f), "../../My assets/Astroid_Data");
+	plane.GetMeshes()[0]->vertices[0].normal = XMFLOAT3(0.0f, 1.0f, 0.0f);
+	plane.GetMeshes()[0]->vertices[1].normal = XMFLOAT3(0.0f, 1.0f, 0.0f);
+	plane.GetMeshes()[0]->vertices[2].normal = XMFLOAT3(0.0f, 1.0f, 0.0f);
+	plane.GetMeshes()[0]->vertices[3].normal = XMFLOAT3(0.0f, 1.0f, 0.0f);
+	hr = plane.GetMeshes()[0]->CreateVertexShader(myDevice, PlaneVertexShader, sizeof(PlaneVertexShader));
+	hr = plane.GetMeshes()[0]->CreatePixelShader(myDevice, PlanePixelShader, sizeof(PlanePixelShader));
+	hr = plane.GetMeshes()[0]->CreateGeometryShader(myDevice, PlaneGeometryShader, sizeof(PlaneGeometryShader));
+	hr = plane.GetMeshes()[0]->CreateVertexBuffer(myDevice);
+	hr = plane.GetMeshes()[0]->CreateIndexBuffer(myDevice);
+	hr = plane.GetMeshes()[0]->CreateShaderResourceView(myDevice, L"../../My assets/Textures/Rock/Rock_Diffuse.dds");
+	hr = plane.GetMeshes()[0]->CreateSamplerState(myDevice);
+
 	modelPositions.push_back(ywing.GetWorldMatrix().r[3]);
 	modelPositions.push_back(spaceStation.GetWorldMatrix().r[3]);
 	modelPositions.push_back(venatorStarDestroyer.GetWorldMatrix().r[3]);
@@ -445,17 +417,6 @@ HRESULT Graphics::InitializeDevice()
 	modelPositions.push_back(XMLoadFloat4x4(&matrix_cb.world[2]).r[3]);
 	modelPositions.push_back(XMLoadFloat4x4(&matrix_cb.world[3]).r[3]);
 	modelPositions.push_back(XMLoadFloat4x4(&matrix_cb.world[4]).r[3]);
-
-#if USE_SECOND_VIEWPORT
-	XMStoreFloat4x4(&matrix_cb.world[1], XMMatrixMultiply(XMMatrixRotationX(30.0f), XMMatrixTranslation(-40.0f, 20.0f, 30.0f)));
-	XMStoreFloat4x4(&matrix_cb.world[2], XMMatrixMultiply(XMMatrixRotationX(30.0f), XMMatrixTranslation(-50.0f, 25.0f, -50.0f)));
-	XMStoreFloat4x4(&matrix_cb.world[3], XMMatrixMultiply(XMMatrixRotationX(30.0f), XMMatrixTranslation(-90.0f, 30.0f, 60.0f)));
-	XMStoreFloat4x4(&matrix_cb.world[4], XMMatrixMultiply(XMMatrixRotationX(30.0f), XMMatrixTranslation(-90.0f, 35.0f, -25.0f)));
-	modelPositions.push_back(XMLoadFloat4x4(&matrix_cb.world[1]).r[3]);
-	modelPositions.push_back(XMLoadFloat4x4(&matrix_cb.world[2]).r[3]);
-	modelPositions.push_back(XMLoadFloat4x4(&matrix_cb.world[3]).r[3]);
-	modelPositions.push_back(XMLoadFloat4x4(&matrix_cb.world[4]).r[3]);
-#endif
 
 	// describe constant variables and create constant buffer
 	hr = CreateBuffer(myDevice, &matrix_id3d11buffer, D3D11_BIND_CONSTANT_BUFFER, sizeof(Matrix_ConstantBuffer), nullptr);
@@ -615,4 +576,5 @@ void Graphics::ConstantBufferSetUp(const XMMATRIX& worldMatrix, Camera& camera)
 	// set constant buffer in memory
 	myContext->VSSetConstantBuffers(0, 2, constantBuffer);
 	myContext->PSSetConstantBuffers(0, 2, constantBuffer);
+	myContext->GSSetConstantBuffers(0, 2, constantBuffer);
 }

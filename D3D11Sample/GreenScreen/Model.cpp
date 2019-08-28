@@ -7,6 +7,11 @@ void Model::SetPipeline(ID3D11DeviceContext* context, unsigned int index)
 	context->IASetVertexBuffers(0, 1, &meshes[index]->vertexBuffer, &strides, &offsets);
 	context->IASetIndexBuffer(meshes[index]->indexBuffer, DXGI_FORMAT_R32_UINT, 0);
 	context->VSSetShader(meshes[index]->vertexShader, nullptr, 0);
+	// optinal shader stages
+	if (meshes[index]->geometryShader)
+		context->GSSetShader(meshes[index]->geometryShader, nullptr, 0);
+	else
+		context->GSSetShader(nullptr, nullptr, 0);
 	context->PSSetShader(meshes[index]->pixelShader, nullptr, 0);
 	context->PSSetShaderResources(0, (UINT)meshes[index]->shaderResourceViews.size(), meshes[index]->shaderResourceViews.data());
 	context->PSSetSamplers(0, 1, &meshes[index]->sampler);
