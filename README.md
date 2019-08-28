@@ -11,3 +11,4 @@ Camera turn-to/look-at : SPACE (Resetting camera will turn off lock on)
 
 On launch normal mapping is disabled.
 Ground plane for normal map is below camera eye, so just look down. 
+Geometry shader is trianlges that are flying around, those are my 'Stars'
