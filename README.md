@@ -1,4 +1,4 @@
-# P-P4_Graphics2
+# P-P4
 Project and portfolio 4
 
 The .exe is in the solution folder
