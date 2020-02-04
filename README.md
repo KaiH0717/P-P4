@@ -1,5 +1,5 @@
 # P-P4
-Project and portfolio 4
+Project and portfolio 4, The executable is the the D3D11Sample/GreenScreen folder, you can just download the repo and run the exe
 
 The .exe is in the solution folder
 Camera controls:
